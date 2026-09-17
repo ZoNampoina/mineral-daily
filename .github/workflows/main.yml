@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Recuperer le projet
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Installer Flutter
         uses: subosito/flutter-action@v2
@@ -17,14 +17,46 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Trouver les fichiers Mineral Daily
+        shell: bash
+        run: |
+          set -e
+
+          echo "Contenu du depot :"
+          find . -maxdepth 4 -type f
+
+          # Si un ZIP a ete envoye, on l'extrait
+          for z in *.zip; do
+            if [ -f "$z" ]; then
+              echo "Extraction de $z"
+              mkdir -p extracted
+              unzip -o "$z" -d extracted
+            fi
+          done
+
+          MAIN_FILE=$(find . -type f -path "*/lib/main.dart" | head -n 1)
+          PUBSPEC_FILE=$(find . -type f -name "pubspec.yaml" | head -n 1)
+
+          if [ -z "$MAIN_FILE" ]; then
+            echo "ERREUR : lib/main.dart introuvable"
+            exit 1
+          fi
+
+          if [ -z "$PUBSPEC_FILE" ]; then
+            echo "ERREUR : pubspec.yaml introuvable"
+            exit 1
+          fi
+
+          echo "main.dart trouve : $MAIN_FILE"
+          echo "pubspec trouve : $PUBSPEC_FILE"
+
+          mkdir -p backup/lib
+          cp "$MAIN_FILE" backup/lib/main.dart
+          cp "$PUBSPEC_FILE" backup/pubspec.yaml
+
       - name: Creer le projet Android
         run: |
-          mkdir backup
-          cp -r lib backup/
-          cp pubspec.yaml backup/
-
           flutter create --platforms=android --org mg.mineraldaily mineral_daily
-
           cp backup/lib/main.dart mineral_daily/lib/main.dart
           cp backup/pubspec.yaml mineral_daily/pubspec.yaml
 
@@ -72,14 +104,16 @@ jobs:
           gradle = project / "android/app/build.gradle.kts"
           g = gradle.read_text()
 
-          g = g.replace(
-              "compileOptions {",
-              """compileOptions {
-                  isCoreLibraryDesugaringEnabled = true""",
-              1
-          )
+          if "isCoreLibraryDesugaringEnabled" not in g:
+              g = g.replace(
+                  "compileOptions {",
+                  """compileOptions {
+                      isCoreLibraryDesugaringEnabled = true""",
+                  1
+              )
 
-          g += """
+          if "coreLibraryDesugaring" not in g:
+              g += """
 
           dependencies {
               coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
