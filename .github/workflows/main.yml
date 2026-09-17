@@ -1,0 +1,107 @@
+name: Build Mineral Daily APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperer le projet
+        uses: actions/checkout@v4
+
+      - name: Installer Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Creer le projet Android
+        run: |
+          mkdir backup
+          cp -r lib backup/
+          cp pubspec.yaml backup/
+
+          flutter create --platforms=android --org mg.mineraldaily mineral_daily
+
+          cp backup/lib/main.dart mineral_daily/lib/main.dart
+          cp backup/pubspec.yaml mineral_daily/pubspec.yaml
+
+      - name: Configurer Android
+        shell: python
+        run: |
+          from pathlib import Path
+
+          project = Path("mineral_daily")
+
+          manifest = project / "android/app/src/main/AndroidManifest.xml"
+          text = manifest.read_text()
+
+          permissions = """
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+              <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+              <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+          """
+
+          p = text.find(">")
+          text = text[:p+1] + "\n" + permissions + text[p+1:]
+
+          receivers = """
+                  <receiver
+                      android:exported="false"
+                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+
+                  <receiver
+                      android:exported="false"
+                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+                      <intent-filter>
+                          <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                          <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                      </intent-filter>
+                  </receiver>
+          """
+
+          text = text.replace(
+              "</application>",
+              receivers + "\n    </application>"
+          )
+
+          manifest.write_text(text)
+
+          gradle = project / "android/app/build.gradle.kts"
+          g = gradle.read_text()
+
+          g = g.replace(
+              "compileOptions {",
+              """compileOptions {
+                  isCoreLibraryDesugaringEnabled = true""",
+              1
+          )
+
+          g += """
+
+          dependencies {
+              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+          }
+          """
+
+          gradle.write_text(g)
+
+      - name: Installer les dependances
+        working-directory: mineral_daily
+        run: flutter pub get
+
+      - name: Construire APK
+        working-directory: mineral_daily
+        run: flutter build apk --release
+
+      - name: Preparer APK
+        run: |
+          cp mineral_daily/build/app/outputs/flutter-apk/app-release.apk MineralDaily.apk
+
+      - name: Publier APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MineralDaily-APK
+          path: MineralDaily.apk
