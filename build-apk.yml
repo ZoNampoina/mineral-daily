@@ -1,0 +1,113 @@
+name: Build Mineral Daily APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le projet
+        uses: actions/checkout@v6
+
+      - name: Installer Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Créer le squelette Android
+        shell: bash
+        run: |
+          set -e
+          mkdir -p _source_backup/lib
+          cp lib/main.dart _source_backup/lib/main.dart
+          cp pubspec.yaml _source_backup/pubspec.yaml
+
+          flutter create --platforms=android --org mg.mineraldaily mineral_daily
+
+          cp _source_backup/lib/main.dart mineral_daily/lib/main.dart
+          cp _source_backup/pubspec.yaml mineral_daily/pubspec.yaml
+
+      - name: Configurer Android pour les notifications
+        shell: python
+        run: |
+          from pathlib import Path
+
+          project = Path("mineral_daily")
+          manifest = project / "android/app/src/main/AndroidManifest.xml"
+          text = manifest.read_text(encoding="utf-8")
+
+          permissions = '''
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+              <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+              <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+          '''
+
+          if "android.permission.POST_NOTIFICATIONS" not in text:
+              idx = text.find(">")
+              text = text[:idx+1] + "\n" + permissions + text[idx+1:]
+
+          receivers = '''
+                  <receiver
+                      android:exported="false"
+                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+                  <receiver
+                      android:exported="false"
+                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+                      <intent-filter>
+                          <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                          <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                          <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                          <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+                      </intent-filter>
+                  </receiver>
+          '''
+
+          if "ScheduledNotificationReceiver" not in text:
+              text = text.replace("</application>", receivers + "\n    </application>")
+
+          manifest.write_text(text, encoding="utf-8")
+
+          gradle = project / "android/app/build.gradle.kts"
+          g = gradle.read_text(encoding="utf-8")
+
+          if "isCoreLibraryDesugaringEnabled" not in g:
+              g = g.replace(
+                  "compileOptions {",
+                  "compileOptions {\n        isCoreLibraryDesugaringEnabled = true",
+                  1,
+              )
+
+          if 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:' not in g:
+              g += "\n\ndependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.1.4\")\n}\n"
+
+          gradle.write_text(g, encoding="utf-8")
+
+      - name: Télécharger les dépendances
+        working-directory: mineral_daily
+        run: flutter pub get
+
+      - name: Vérifier le code
+        working-directory: mineral_daily
+        run: flutter analyze
+
+      - name: Construire l'APK
+        working-directory: mineral_daily
+        run: flutter build apk --release
+
+      - name: Renommer l'APK
+        shell: bash
+        run: |
+          cp mineral_daily/build/app/outputs/flutter-apk/app-release.apk MineralDaily.apk
+
+      - name: Mettre l'APK à disposition
+        uses: actions/upload-artifact@v7
+        with:
+          name: MineralDaily-APK
+          path: MineralDaily.apk
+          if-no-files-found: error
+          retention-days: 30

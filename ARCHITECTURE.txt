@@ -1,0 +1,37 @@
+MINERAL DAILY — ARCHITECTURE V1
+===============================
+
+1. APPLICATION FLUTTER
+   - Interface Android
+   - Historique
+   - Quiz
+   - Progression
+   - Favoris
+   - Paramètres
+
+2. STOCKAGE LOCAL
+   - SharedPreferences
+   - Favoris
+   - Scores
+   - Heure de notification
+
+3. NOTIFICATION QUOTIDIENNE
+   - flutter_local_notifications
+   - 07:00 par défaut
+   - Fuseau Indian/Antananarivo
+   - Programmation locale Android
+
+4. CONTENU V1
+   - 5 fiches embarquées
+   - aucune connexion obligatoire
+
+5. V2 SÉCURISÉE
+   Téléphone -> Backend personnel -> API OpenAI + sources publiques -> fiche JSON -> téléphone
+
+   La clé OpenAI restera sur le backend, jamais dans l'APK.
+
+
+COMPILATION TÉLÉPHONE UNIQUEMENT
+- GitHub Actions
+- Workflow : .github/workflows/build-apk.yml
+- Sortie : MineralDaily.apk
