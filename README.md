@@ -13,3 +13,6 @@ Le contenu du dossier `docs/` est publié par GitHub Pages.
 
 ## Domaine
 Le nom d'application est `arizona-mineral.mg`. Le domaine personnalisé pourra être connecté lorsqu'il sera enregistré.
+
+
+Publication GitHub Pages relancée après activation du dépôt public.
