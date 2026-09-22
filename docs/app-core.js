@@ -98,6 +98,7 @@ async function enterApp(){
  $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');setSync('Synchronisation…',false);
  await loadProfile();
  await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
+ if(typeof loadArizonaExtras==='function')await loadArizonaExtras();
  await touchActivity();
  await recordLogin();
  renderAll();
@@ -168,7 +169,7 @@ async function toggleFavorite(id){
 async function openLesson(id){
  const l=lessons.find(x=>Number(x.id)===Number(id));if(!l)return;activeLesson=l;$('lessonModal').classList.add('open');
  $('modalName').textContent=l.name+' · '+compactSymbol(l);$('modalDate').textContent=formatDate(l.lesson_date);$('modalFav').textContent=favorites.has(Number(l.id))?'★':'☆';
- $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');await fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l)
+ $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');await fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l);if(typeof renderLessonExtras==='function')renderLessonExtras(l)
 }
 function renderDetails(l){
  const raw=l.raw_text;let html='';
