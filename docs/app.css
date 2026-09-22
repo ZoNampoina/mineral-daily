@@ -1501,3 +1501,25 @@ body.menuOpen{overflow:hidden}
 .v21GraphLegend i{display:inline-block;width:28px;height:0;border-top:2px solid var(--muted)}
 .v21GraphLegend i.derived{border-top-style:dashed;opacity:.65}
 .v21GraphLegend i.curated{border-top-color:var(--gold2);border-top-width:3px}
+
+
+/* === ARIZONA V21.6 · performance + entités privées + ingénieur === */
+.engineerToolbarControls{display:grid;gap:8px;min-width:0}
+.engineerDetailTools{justify-content:flex-end;flex-wrap:wrap}
+.engineerDetailTools .detailToolBtn{white-space:nowrap}
+.adminEntityPanel h3{margin:4px 0}
+.adminEntityHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.adminEntityHead>strong{font-size:28px;color:var(--gold2);line-height:1}
+.adminStructuredEntities{display:grid;gap:7px;margin-top:11px;max-height:330px;overflow:auto}
+.adminEntityRow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:11px}
+.adminEntityRow>div{display:grid;gap:2px;min-width:0}
+.adminEntityRow b{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adminEntityRow small{font-size:9px;color:var(--muted)}
+.adminEntityRow>span{font-size:10px;color:var(--gold2);font-weight:800;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:620px){
+ .engineerToolbarControls{width:100%}
+ .engineerDetailTools{justify-content:stretch}
+ .engineerDetailTools .detailToolBtn{flex:1}
+ .adminEntityRow{grid-template-columns:1fr}
+ .adminEntityRow>span{max-width:none}
+}
