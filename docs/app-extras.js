@@ -132,9 +132,14 @@ function renderCollections(){
 function renderComparePicker(){
   const box=$('comparePicker');if(!box)return;
   box.innerHTML=lessons.map(l=>'<label class="compareChoice"><input type="checkbox" class="compareCheck" value="'+l.id+'"><span><b>'+esc(l.name)+'</b><small>'+esc(compactSymbol(l))+'</small></span></label>').join('');
-  box.querySelectorAll('.compareCheck').forEach(ch=>ch.onchange=()=>{
+  box.querySelectorAll('.compareCheck').forEach(ch=>ch.onchange=async()=>{
     const selected=[...box.querySelectorAll('.compareCheck:checked')];
-    if(selected.length>4){ch.checked=false;toast('Maximum 4 minéraux à comparer.')}
+    if(selected.length>4){ch.checked=false;toast('Maximum 4 minéraux à comparer.');return}
+    if(ch.checked&&typeof requestLessonDataV218==='function'){
+      try{
+        await requestLessonDataV218(Number(ch.value),{title:'Chargement du minerai…',subtitle:'Préparation des données pour la comparaison.',delay:120});
+      }catch(e){console.warn(e);toast('Chargement du minerai impossible.')}
+    }
   });
 }
 
