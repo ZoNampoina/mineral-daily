@@ -26,6 +26,7 @@ async function loadArizonaV215(force=false){
   if(!session)return;
   if(v215Loaded&&!force)return;
   if(v215Loading&&!force)return v215Loading;
+  const loadToken=typeof beginLoading==='function'?beginLoading('Chargement des projets…',{delay:80,subtitle:'Campagnes, échantillons et analyses.'}):null;
   v215Loading=(async()=>{
     const [p,l,c,s,a]=await Promise.all([
       sb.from('mining_projects').select('*').order('updated_at',{ascending:false}),
@@ -40,7 +41,7 @@ async function loadArizonaV215(force=false){
     if(!activeProjectIdV215&&miningProjectsV215[0])activeProjectIdV215=Number(miningProjectsV215[0].id);
     v215Loaded=true;
   })();
-  try{await v215Loading}finally{v215Loading=null}
+  try{await v215Loading}finally{v215Loading=null;if(loadToken&&typeof endLoading==='function')endLoading(loadToken)}
 }
 
 function renderProjectsV215(){
