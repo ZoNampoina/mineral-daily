@@ -1,5 +1,5 @@
 
-let madagascarEntitiesV21=[],madagascarEntityLessonsV21=[],knowledgeRelationsV21=[];
+let madagascarEntitiesV21=[],madagascarEntityLessonsV21=[],knowledgeRelationsV21=[],v21Loaded=false,v21Loading=null;
 
 function v21Text(v){return String(v??'').replace(/\s+/g,' ').trim()}
 function v21Norm(v){return v21Text(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
@@ -7,31 +7,40 @@ function v21TypeLabel(v){return ({project:'Projet',mine:'Mine',deposit:'Gisement
 function v21StatusLabel(v){return ({unknown:'Non renseigné',exploration:'Exploration',development:'Développement',operation:'Exploitation',suspended:'Suspendu',closed:'Fermé'})[v]||v}
 function v21RelationLabel(v){return ({associated_with:'Associé à',coproduct:'Coproduit',substitute:'Substitut',occurs_in:'Présent dans',deposit_type:'Type de gisement',processed_by:'Traité par',used_in:'Utilisé dans',project_link:'Projet lié',related_to:'Lié à'})[v]||v}
 
-async function loadArizonaV21(){
+async function loadArizonaV21(force=false){
   if(!session)return;
-  const [e,l,r]=await Promise.all([
-    sb.from('madagascar_entities').select('*').order('name',{ascending:true}),
-    sb.from('madagascar_entity_lessons').select('*'),
-    sb.from('knowledge_relations').select('*').order('created_at',{ascending:true})
-  ]);
-  if(e.error||l.error||r.error){console.warn('ARIZONA V21',e.error||l.error||r.error)}
-  madagascarEntitiesV21=e.data||[];
-  madagascarEntityLessonsV21=l.data||[];
-  knowledgeRelationsV21=r.data||[];
+  if(v21Loaded&&!force)return;
+  if(v21Loading&&!force)return v21Loading;
+  v21Loading=(async()=>{
+    const [e,l,r]=await Promise.all([
+      sb.from('madagascar_entities').select('*').order('name',{ascending:true}),
+      sb.from('madagascar_entity_lessons').select('*'),
+      sb.from('knowledge_relations').select('*').order('created_at',{ascending:true})
+    ]);
+    if(e.error||l.error||r.error){console.warn('ARIZONA V21',e.error||l.error||r.error);return}
+    madagascarEntitiesV21=e.data||[];
+    madagascarEntityLessonsV21=l.data||[];
+    knowledgeRelationsV21=r.data||[];
+    v21Loaded=true;
+  })();
+  try{await v21Loading}finally{v21Loading=null}
 }
 function v21LessonsForEntity(entityId){
   const ids=madagascarEntityLessonsV21.filter(x=>Number(x.entity_id)===Number(entityId)).map(x=>Number(x.lesson_id));
   return lessons.filter(l=>ids.includes(Number(l.id)));
 }
+function v21VisibleEntities(){
+  return madagascarEntitiesV21.filter(e=>String(e.owner_user_id||'')===String(session?.user?.id||''));
+}
 function v21EntitiesForLesson(lessonId){
   const ids=madagascarEntityLessonsV21.filter(x=>Number(x.lesson_id)===Number(lessonId)).map(x=>Number(x.entity_id));
-  return madagascarEntitiesV21.filter(e=>ids.includes(Number(e.id)));
+  return v21VisibleEntities().filter(e=>ids.includes(Number(e.id)));
 }
 function v21Location(e){
   return [e.fokontany,e.commune,e.district,e.region].filter(Boolean).join(' · ')||'Localisation non renseignée';
 }
 function v21Regions(){
-  return [...new Set(madagascarEntitiesV21.map(e=>v21Text(e.region)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+  return [...new Set(v21VisibleEntities().map(e=>v21Text(e.region)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
 }
 
 function renderMadagascarFiltersV21(){
@@ -56,11 +65,11 @@ function renderMadagascarV21(){
   const list=$('madagascarStructuredList'),stats=$('madagascarStats');if(!list)return;
   renderMadagascarFiltersV21();
   const arr=filteredMadagascarV21();
-  const regions=new Set(madagascarEntitiesV21.map(e=>v21Text(e.region)).filter(Boolean));
+  const regions=new Set(v21VisibleEntities().map(e=>v21Text(e.region)).filter(Boolean));
   const linkedLessons=new Set(madagascarEntityLessonsV21.map(x=>Number(x.lesson_id)));
   const legacy=lessons.filter(l=>typeof azHasMadagascar==='function'&&azHasMadagascar(l));
   if(stats)stats.innerHTML=
-    '<span><b>'+madagascarEntitiesV21.length+'</b><small>entités structurées</small></span>'+
+    '<span><b>'+v21VisibleEntities().length+'</b><small>mes entités structurées</small></span>'+
     '<span><b>'+regions.size+'</b><small>régions</small></span>'+
     '<span><b>'+linkedLessons.size+'</b><small>substances liées</small></span>'+
     '<span><b>'+legacy.length+'</b><small>fiches historiques</small></span>';
@@ -68,7 +77,7 @@ function renderMadagascarV21(){
     const linked=v21LessonsForEntity(e.id);
     const coord=(e.latitude!=null&&e.longitude!=null)?Number(e.latitude).toFixed(4)+', '+Number(e.longitude).toFixed(4):'';
     return '<article class="card v21MgEntityCard" data-v21-entity="'+e.id+'">'+
-      '<div class="v21EntityHead"><div><div class="eyebrow">'+esc(v21TypeLabel(e.entity_type))+'</div><h3>'+esc(e.name)+'</h3></div><span class="azChip">'+esc(v21StatusLabel(e.status))+'</span></div>'+
+      '<div class="v21EntityHead"><div><div class="eyebrow">'+esc(v21TypeLabel(e.entity_type))+'</div><h3>'+esc(e.name)+'</h3></div><div class="v21EntityActions"><span class="azChip">'+esc(v21StatusLabel(e.status))+'</span><button class="plainIcon v21DeleteEntityCard" data-v21-delete="'+e.id+'" title="Supprimer">×</button></div></div>'+
       '<div class="v21EntityLocation">'+esc(v21Location(e))+'</div>'+
       (e.operator_name?'<div class="small">Opérateur : '+esc(e.operator_name)+'</div>':'')+
       (coord?'<div class="small">Coordonnées : '+esc(coord)+'</div>':'')+
@@ -76,8 +85,9 @@ function renderMadagascarV21(){
       '<div class="lessonSummary">'+esc(compactText(e.description||e.development_stage||'',210))+'</div>'+
     '</article>';
   }).join(''):'<div class="card cardPad small">Aucune entité structurée ne correspond aux filtres. Les informations historiques restent disponibles plus bas.</div>';
-  list.querySelectorAll('[data-v21-entity]').forEach(card=>card.onclick=e=>{if(e.target.closest('[data-v21-lesson]'))return;openMadagascarEntityV21(Number(card.dataset.v21Entity))});
+  list.querySelectorAll('[data-v21-entity]').forEach(card=>card.onclick=e=>{if(e.target.closest('[data-v21-lesson],[data-v21-delete]'))return;openMadagascarEntityV21(Number(card.dataset.v21Entity))});
   list.querySelectorAll('[data-v21-lesson]').forEach(b=>b.onclick=e=>{e.stopPropagation();openLesson(Number(b.dataset.v21Lesson))});
+  list.querySelectorAll('[data-v21-delete]').forEach(b=>b.onclick=e=>{e.stopPropagation();deleteMadagascarEntityV21(Number(b.dataset.v21Delete))});
   renderLegacyMadagascarV21();
   if(isAdmin())renderMadagascarAdminListV21();
 }
@@ -109,13 +119,11 @@ function openMadagascarEntityV21(id){
     '</div>'+
     (e.description?'<div class="card cardPad v21EntityDescription">'+esc(e.description)+'</div>':'')+
     '<div class="sectionTitle">Substances liées</div><div class="azChips">'+(linked.length?linked.map(l=>'<button class="azChip v21ModalLesson" data-id="'+l.id+'">'+esc(l.name)+'</button>').join(''):'<span class="small">Aucune fiche liée.</span>')+'</div>'+
-    (isAdmin()?'<div class="v21ModalAdminActions"><button id="v21EditEntityBtn" class="btn">Modifier</button><button id="v21DeleteEntityBtn" class="btn danger">Supprimer</button></div>':'');
+    '<div class="v21ModalAdminActions"><button id="v21EditEntityBtn" class="btn">Modifier</button><button id="v21DeleteEntityBtn" class="btn danger">Supprimer</button></div>';
   modal.classList.add('open');
   modal.querySelectorAll('.v21ModalLesson').forEach(b=>b.onclick=()=>{modal.classList.remove('open');openLesson(Number(b.dataset.id))});
-  if(isAdmin()){
-    $('v21EditEntityBtn').onclick=()=>{modal.classList.remove('open');populateMadagascarFormV21(e);$('v21MgAdmin')?.scrollIntoView({behavior:'smooth',block:'start'})};
-    $('v21DeleteEntityBtn').onclick=()=>deleteMadagascarEntityV21(e.id);
-  }
+  $('v21EditEntityBtn').onclick=()=>{modal.classList.remove('open');populateMadagascarFormV21(e);$('v21MgAdmin')?.scrollIntoView({behavior:'smooth',block:'start'})};
+  $('v21DeleteEntityBtn').onclick=()=>deleteMadagascarEntityV21(e.id);
 }
 
 function renderMadagascarAdminListV21(){
@@ -135,7 +143,7 @@ function populateMadagascarFormV21(e=null){
   if($('v21MgSaveBtn'))$('v21MgSaveBtn').textContent=e?'Mettre à jour':'Créer l’entité';
 }
 async function saveMadagascarEntityV21(){
-  if(!isAdmin())return;
+  if(!session)return;
   const id=Number($('v21MgId')?.value||0),name=v21Text($('v21MgName')?.value||'');
   if(!name)return toast('Le nom est requis.');
   const lat=$('v21MgLat')?.value===''?null:Number($('v21MgLat').value),lon=$('v21MgLon')?.value===''?null:Number($('v21MgLon').value);
@@ -152,7 +160,7 @@ async function saveMadagascarEntityV21(){
   if(id){
     const {error}=await sb.from('madagascar_entities').update(payload).eq('id',id);if(error)return toast(error.message);
   }else{
-    const {data,error}=await sb.from('madagascar_entities').insert({...payload,created_by:session.user.id}).select('id').single();
+    const {data,error}=await sb.from('madagascar_entities').insert({...payload,owner_user_id:session.user.id,created_by:session.user.id}).select('id').single();
     if(error)return toast(error.message);entityId=Number(data.id);
   }
   const chosen=[...document.querySelectorAll('#v21MgLinkedLessons input:checked')].map(x=>Number(x.value));
@@ -161,15 +169,15 @@ async function saveMadagascarEntityV21(){
     const rows=chosen.map((lessonId,i)=>({entity_id:entityId,lesson_id:lessonId,relation_type:i===0?'primary_substance':'substance',created_by:session.user.id}));
     const {error}=await sb.from('madagascar_entity_lessons').insert(rows);if(error)return toast(error.message);
   }
-  await loadArizonaV21();populateMadagascarFormV21();renderMadagascarV21();renderKnowledgeGraphV21();
+  await loadArizonaV21(true);populateMadagascarFormV21();renderMadagascarV21();renderKnowledgeGraphV21();
   toast(id?'Entité Madagascar mise à jour.':'Entité Madagascar créée.');
 }
 async function deleteMadagascarEntityV21(id){
-  if(!isAdmin())return;
+  if(!session)return;
   const e=madagascarEntitiesV21.find(x=>Number(x.id)===Number(id));
   if(!confirm('Supprimer '+(e?.name||'cette entité')+' ?'))return;
   const {error}=await sb.from('madagascar_entities').delete().eq('id',id);if(error)return toast(error.message);
-  $('v21MgEntityModal')?.classList.remove('open');await loadArizonaV21();populateMadagascarFormV21();renderMadagascarV21();renderKnowledgeGraphV21();toast('Entité supprimée.');
+  $('v21MgEntityModal')?.classList.remove('open');await loadArizonaV21(true);populateMadagascarFormV21();renderMadagascarV21();renderKnowledgeGraphV21();toast('Entité supprimée.');
 }
 
 /* Knowledge Graph */
@@ -288,7 +296,9 @@ async function deleteKnowledgeRelationV21(id){
   const {error}=await sb.from('knowledge_relations').delete().eq('id',id);if(error)return toast(error.message);
   await loadArizonaV21();renderKnowledgeGraphV21();toast('Relation supprimée.');
 }
-function onArizonaV21ViewChange(view){
+async function onArizonaV21ViewChange(view){
+  if(view!=='madagascar'&&view!=='knowledge')return;
+  await loadArizonaV21();
   if(view==='madagascar')renderMadagascarV21();
   if(view==='knowledge')renderKnowledgePickerV21();
 }
