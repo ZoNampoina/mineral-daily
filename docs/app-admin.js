@@ -225,24 +225,25 @@ $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('
 
 // --- Synchronisation automatique + raccourcis administrateur ---
 async function refreshArizona(showToast=false){
-  if(!session) return;
+  if(!session)return;
+  const view=typeof currentViewV217==='function'?currentViewV217():'home';
+  const token=typeof beginLoading==='function'?beginLoading(showToast?'Synchronisation ARIZONA…':'Synchronisation…',{soft:!showToast,delay:showToast?0:260,subtitle:'Mise à jour des données utiles à l’écran actuel.'}):null;
   try{
     setSync('Synchronisation…',false);
-    const before=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
-    await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
-    if(typeof loadArizonaV20==='function')await loadArizonaV20();
-    if(typeof loadArizonaV21==='function')await loadArizonaV21();
-    if(typeof loadArizonaV215==='function')await loadArizonaV215();
-    renderAll();
-    if(isAdmin()) await loadAdmin();
-    const after=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
+    const before=lessons.length?String(lessons[0].updated_at||'')+'|'+String(lessons[0].id||''):'';
+    if(typeof syncCoreV217==='function')await syncCoreV217(true);
+    else await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
+    if((view==='madagascar'||view==='knowledge')&&typeof loadArizonaV21==='function')await loadArizonaV21(true);
+    if(view==='projects'&&typeof loadArizonaV215==='function')await loadArizonaV215(true);
+    if(view==='admin'&&isAdmin())await loadAdmin();
+    if(view==='history'||view==='favorites'||view==='admin')renderLessonLists(view);
+    const after=lessons.length?String(lessons[0].updated_at||'')+'|'+String(lessons[0].id||''):'';
     setSync('Synchronisé',true);
-    if(showToast) toast(before!==after ? 'Nouvelle fiche récupérée.' : 'ARIZONA est à jour.');
+    if(showToast)toast(before!==after?'Nouvelles données récupérées.':'ARIZONA est à jour.');
   }catch(e){
-    console.error(e);
-    setSync('Erreur synchro',false);
-    if(showToast) toast('Synchronisation impossible : '+e.message);
-  }
+    console.error(e);setSync('Erreur synchro',false);
+    if(showToast)toast('Synchronisation impossible : '+e.message);
+  }finally{if(token&&typeof endLoading==='function')endLoading(token)}
 }
 
 if($('refreshBtn')) $('refreshBtn').onclick=()=>refreshArizona(true);
@@ -258,9 +259,14 @@ if($('quickImportBtn')) $('quickImportBtn').onclick=()=>{
 };
 
 // Vérifie le cloud automatiquement : utile si la fiche quotidienne arrive pendant que l'app est déjà ouverte.
-setInterval(()=>{ if(session) refreshArizona(false); }, 60000);
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden && session) refreshArizona(false); });
-window.addEventListener('focus',()=>{ if(session) refreshArizona(false); });
+setInterval(()=>{if(session)refreshArizona(false)},300000);
+function refreshOnReturnV217(){
+  if(!session)return;
+  const stale=typeof azLastCoreRefresh!=='undefined'?Date.now()-azLastCoreRefresh>90000:true;
+  if(stale)refreshArizona(false);
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshOnReturnV217()});
+window.addEventListener('focus',refreshOnReturnV217);
 
 
 // --- Menu latéral compact ARIZONA ---
