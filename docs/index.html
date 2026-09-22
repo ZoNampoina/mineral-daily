@@ -43,19 +43,30 @@
     <button id="closeMenuBtn" class="btn iconBtn" type="button" aria-label="Fermer le menu">✕</button>
   </div>
 
-  <div class="menuSectionLabel">Navigation</div>
   <nav class="menuNav" id="mainTabs">
-    <button class="tab active" data-view="home">Aujourd’hui</button>
-    <button class="tab" data-view="history">Historique</button>
-    <button class="tab" data-view="favorites">Favoris</button>
-    <button class="tab" data-view="progress">Progression</button>
-    <button class="tab" data-view="explorer">Explorer</button>
-    <button class="tab" data-view="madagascar">Madagascar</button>
-    <button class="tab" data-view="compare">Comparer</button>
-    <button class="tab" data-view="collections">Collections</button>
-    <button class="tab" data-view="review">Révision</button>
-    <button class="tab" data-view="calculators">Calculateurs</button>
-    <button class="tab adminOnly hidden" data-view="admin">Administration</button>
+    <div class="menuUsageGroup">
+      <div class="menuSectionLabel menuSectionInner">Essentiel</div>
+      <button class="tab active" data-view="home">Aujourd’hui</button>
+      <button class="tab" data-view="explorer">Explorer</button>
+      <button class="tab" data-view="history">Historique</button>
+      <button class="tab" data-view="favorites">Favoris</button>
+    </div>
+    <div class="menuUsageGroup">
+      <div class="menuSectionLabel menuSectionInner">Apprendre & organiser</div>
+      <button class="tab" data-view="review">Révision</button>
+      <button class="tab" data-view="progress">Progression</button>
+      <button class="tab" data-view="collections">Collections</button>
+    </div>
+    <div class="menuUsageGroup">
+      <div class="menuSectionLabel menuSectionInner">Ingénierie & analyse</div>
+      <button class="tab" data-view="madagascar">Madagascar</button>
+      <button class="tab" data-view="compare">Comparer</button>
+      <button class="tab" data-view="calculators">Calculateurs</button>
+    </div>
+    <div class="menuUsageGroup adminOnly hidden">
+      <div class="menuSectionLabel menuSectionInner">Gestion</div>
+      <button class="tab adminOnly hidden" data-view="admin">Administration</button>
+    </div>
   </nav>
 
   <div class="menuSectionLabel">Outils</div>
@@ -82,7 +93,7 @@
     <div class="kpis"><button id="lessonsKpi" class="card kpi kpiButton" type="button" title="Afficher l’historique"><strong id="countLessons">0</strong><span>fiches techniques</span></button><button id="favoritesKpi" class="card kpi kpiButton" type="button" title="Afficher les favoris"><strong id="countFav">0</strong><span>favoris</span></button><div class="card kpi"><strong id="avgQuiz">—</strong><span>moyenne quiz</span></div><div class="card kpi"><strong id="cloudKpi">✓</strong><span>synchronisation cloud</span></div></div>
   </div>
   <div class="sectionTitle">Tableau de bord intelligent</div><div id="smartDashboard"></div>
-  <div class="sectionTitle">Images réelles</div><div id="homeGallery" class="gallery"></div>
+  <div class="sectionTitleRow"><div class="sectionTitle">Images réelles</div><button id="refreshHomeImages" class="btn favBtn compactIconBtn" type="button" title="Rafraîchir les images" aria-label="Rafraîchir les images">↻</button></div><div id="homeGallery" class="gallery"></div>
 </section>
 
 <section id="view-history" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div class="searchRow"><input id="historySearch" class="input" placeholder="Rechercher un minéral…"></div><div id="historyList" class="list"></div></section>
@@ -162,8 +173,20 @@
 <section id="view-admin" class="view hidden">
   <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div>
   <div class="adminStats"><div class="card adminStat"><strong id="adminUsers">0</strong><span class="small">utilisateurs</span></div><div class="card adminStat"><strong id="adminLessons">0</strong><span class="small">fiches</span></div><div class="card adminStat"><strong id="adminImports">0</strong><span class="small">imports / créations</span></div><div class="card adminStat"><strong id="adminRecent">0</strong><span class="small">actions récentes</span></div></div>
-  <div class="tabs" style="margin-top:14px"><button class="tab adminSub active" data-sub="users">Utilisateurs</button><button class="tab adminSub" data-sub="notifications">Notifications <span id="notificationBadge" class="notificationBadge hidden">0</span></button><button class="tab adminSub" data-sub="lessons">Fiches</button><button class="tab adminSub" data-sub="logs">Journal d’activité</button></div>
-  <div id="admin-users" class="adminPane">
+  <div class="tabs" style="margin-top:14px"><button class="tab adminSub active" data-sub="dashboard">Tableau de bord</button><button class="tab adminSub" data-sub="users">Utilisateurs</button><button class="tab adminSub" data-sub="notifications">Notifications <span id="notificationBadge" class="notificationBadge hidden">0</span></button><button class="tab adminSub" data-sub="lessons">Fiches</button><button class="tab adminSub" data-sub="logs">Journal d’activité</button></div>
+  <div id="admin-dashboard" class="adminPane">
+    <div class="card cardPad adminInsightHero">
+      <div><div class="eyebrow">Activité utilisateurs</div><h2>Tableau de bord d’usage</h2><div class="small">Synthèse des consultations et recherches enregistrées dans le journal d’activité. Les indicateurs ci-dessous portent principalement sur les 7 et 30 derniers jours.</div></div>
+      <button id="refreshAdminAnalytics" class="btn compactIconBtn" type="button" title="Actualiser les statistiques" aria-label="Actualiser les statistiques">↻</button>
+    </div>
+    <div id="adminUsageSummary" class="adminUsageSummary"></div>
+    <div class="adminInsightGrid">
+      <div class="card cardPad"><div class="eyebrow">Recherches</div><h3>Mots les plus recherchés</h3><div id="adminSearchTerms" class="adminRankList"></div></div>
+      <div class="card cardPad"><div class="eyebrow">Consultations</div><h3>Minerais les plus consultés</h3><div id="adminTopLessons" class="adminRankList"></div></div>
+    </div>
+    <div class="card cardPad" style="margin-top:12px"><div class="eyebrow">Tendance récente</div><h3>Activités marquantes</h3><div id="adminHighlights" class="adminHighlights"></div></div>
+  </div>
+  <div id="admin-users" class="adminPane hidden">
     <div class="card cardPad"><div class="small">Identifiants visibles : e-mail et UUID uniquement. Les mots de passe, hashes, tokens et clés secrètes ne sont jamais accessibles.</div></div>
     <div class="sectionTitle">Comptes</div><div class="tableWrap"><table><thead><tr><th>E-mail</th><th>UUID</th><th>Rôle</th><th>Créé</th><th>Dernière activité</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div>
   </div>
@@ -176,7 +199,7 @@
     <div class="sectionTitle">Gestion des fiches</div><div id="adminLessonsList" class="list"></div>
   </div>
   <div id="admin-logs" class="adminPane hidden">
-    <div class="searchRow"><input id="logSearch" class="input" placeholder="Utilisateur / action / fiche…"><select id="logAction" class="select" style="max-width:180px"><option value="">Toutes actions</option><option>create</option><option>update</option><option>delete</option><option>import</option><option>login</option><option>role_change</option></select></div>
+    <div class="searchRow"><input id="logSearch" class="input" placeholder="Utilisateur / action / fiche…"><select id="logAction" class="select" style="max-width:180px"><option value="">Toutes actions</option><option>create</option><option>update</option><option>delete</option><option>import</option><option>login</option><option>role_change</option><option>search</option><option>view_lesson</option></select></div>
     <div class="tableWrap logTableWrap"><table class="logTable"><thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Objet</th><th>Détails</th></tr></thead><tbody id="logsBody"></tbody></table></div>
   </div>
 </section>
@@ -185,7 +208,7 @@
 
 <div id="lessonModal" class="modal"><div class="modalPanel">
   <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden editIconBtn" type="button" aria-label="Modifier" title="Modifier">✎</button><button id="closeLesson" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div></div>
-  <div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="detailSectionHead"><div class="sectionTitle">Détails techniques</div><div class="detailTools"><button id="expandAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=true})">Tout afficher</button><button id="collapseAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=false})">Tout réduire</button></div></div><div id="modalDetails" class="detailGrid"></div>
+  <div class="sectionTitleRow modalImageTitle"><div class="sectionTitle">Images réelles</div><button id="refreshModalImages" class="btn favBtn compactIconBtn" type="button" title="Rafraîchir les images" aria-label="Rafraîchir les images">↻</button></div><div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="detailSectionHead"><div class="sectionTitle">Détails techniques</div><div class="detailTools"><button id="expandAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=true})">Tout afficher</button><button id="collapseAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=false})">Tout réduire</button></div></div><div id="modalDetails" class="detailGrid"></div>
   <div class="sectionTitle">Sources & qualité documentaire</div><div id="sourceQualityPanel" class="azSourcePanel"></div>
   <div class="sectionTitle">Personnel</div>
   <div class="personalGrid">
