@@ -3,14 +3,31 @@ function engineerSectionCard(title,body,open=false){
   const txt=String(body||'').trim();
   return '<details class="detailCard engineerCard" '+(open?'open':'')+'><summary>'+esc(title)+'</summary><div class="detailBody">'+esc(txt||'Information non encore renseignée dans cette fiche.')+'</div></details>';
 }
-function renderEngineerPicker(){
+let engineerHydrationSeqV218=0;
+async function hydrateEngineerSelectionV218(){
+  const sel=$('engineerLessonSelect'),box=$('engineerWorkspace');if(!sel||!box)return;
+  const id=Number(sel.value||0);if(!id)return;
+  const seq=++engineerHydrationSeqV218;
+  box.innerHTML='<div class="card cardPad small">Chargement des données techniques…</div>';
+  try{
+    if(typeof requestLessonDataV218==='function'){
+      await requestLessonDataV218(id,{title:'Chargement du minerai…',subtitle:'Préparation du dossier Mode Ingénieur.'});
+    }else if(typeof ensureLessonDetail==='function')await ensureLessonDetail(id);
+    if(seq!==engineerHydrationSeqV218||Number(sel.value)!==id)return;
+    renderEngineerWorkspace();
+  }catch(e){
+    console.error(e);
+    if(seq===engineerHydrationSeqV218)box.innerHTML='<div class="card cardPad small">Chargement impossible : '+esc(e.message||'Erreur')+'</div>';
+  }
+}
+async function renderEngineerPicker(){
   const sel=$('engineerLessonSelect');if(!sel)return;
   const previous=sel.value;
   sel.innerHTML=lessons.map(l=>'<option value="'+l.id+'">'+esc(l.name)+' · '+esc(compactSymbol(l))+'</option>').join('');
   if(previous&&lessons.some(l=>String(l.id)===String(previous)))sel.value=previous;
   else if(activeLesson)sel.value=String(activeLesson.id);
   else if(lessons[0])sel.value=String(lessons[0].id);
-  renderEngineerWorkspace();
+  await hydrateEngineerSelectionV218();
 }
 function renderEngineerWorkspace(){
   const sel=$('engineerLessonSelect'),box=$('engineerWorkspace');if(!sel||!box)return;
@@ -60,12 +77,12 @@ function renderEngineerWorkspace(){
   box.querySelectorAll('[data-engineer-open]').forEach(b=>b.onclick=()=>openLesson(Number(b.dataset.engineerOpen)));
   box.querySelectorAll('[data-engineer-target]').forEach(b=>b.onclick=()=>$(b.dataset.engineerTarget)?.scrollIntoView({behavior:'smooth',block:'start'}));
 }
-function onEngineerViewChange(view){
-  if(view==='engineer')renderEngineerPicker();
+async function onEngineerViewChange(view){
+  if(view==='engineer')await renderEngineerPicker();
 }
 function setEngineerDetailsV216(open){
   document.querySelectorAll('#engineerWorkspace details.engineerCard').forEach(d=>d.open=open);
 }
-if($('engineerLessonSelect'))$('engineerLessonSelect').onchange=renderEngineerWorkspace;
+if($('engineerLessonSelect'))$('engineerLessonSelect').onchange=hydrateEngineerSelectionV218;
 if($('engineerExpandAll'))$('engineerExpandAll').onclick=()=>setEngineerDetailsV216(true);
 if($('engineerCollapseAll'))$('engineerCollapseAll').onclick=()=>setEngineerDetailsV216(false);
