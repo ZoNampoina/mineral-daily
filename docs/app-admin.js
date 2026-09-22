@@ -67,3 +67,39 @@ $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('
  const {data}=await sb.auth.getSession();session=data.session;if(session){try{await enterApp()}catch(e){console.error(e);$('authMsg').textContent='Erreur de chargement : '+e.message;$('loginView').classList.remove('hidden');$('appView').classList.add('hidden')}}else{$('loginView').classList.remove('hidden')}
  sb.auth.onAuthStateChange((_event,s)=>{session=s})
 })();
+
+// --- Synchronisation automatique + raccourcis administrateur ---
+async function refreshArizona(showToast=false){
+  if(!session) return;
+  try{
+    setSync('Synchronisation…',false);
+    const before=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
+    await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
+    renderAll();
+    if(isAdmin()) await loadAdmin();
+    const after=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
+    setSync('Synchronisé',true);
+    if(showToast) toast(before!==after ? 'Nouvelle fiche récupérée.' : 'ARIZONA est à jour.');
+  }catch(e){
+    console.error(e);
+    setSync('Erreur synchro',false);
+    if(showToast) toast('Synchronisation impossible : '+e.message);
+  }
+}
+
+if($('refreshBtn')) $('refreshBtn').onclick=()=>refreshArizona(true);
+
+if($('quickImportBtn')) $('quickImportBtn').onclick=()=>{
+  if(!isAdmin()) return;
+  switchView('admin');
+  switchAdmin('lessons');
+  setTimeout(()=>{
+    const el=$('importText');
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.focus(); }
+  },80);
+};
+
+// Vérifie le cloud automatiquement : utile si la fiche quotidienne arrive pendant que l'app est déjà ouverte.
+setInterval(()=>{ if(session) refreshArizona(false); }, 60000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && session) refreshArizona(false); });
+window.addEventListener('focus',()=>{ if(session) refreshArizona(false); });
