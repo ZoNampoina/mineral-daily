@@ -157,3 +157,12 @@ input,textarea,select,button{max-width:100%}
   .gallery{grid-template-columns:1fr}
   .gallery img,.gallery img:first-child{grid-column:auto;height:210px}
 }
+.detailSectionHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px}
+.detailSectionHead .sectionTitle{margin:20px 2px 10px}
+.detailTools{display:flex;gap:7px;flex-wrap:wrap}
+.detailToolBtn{padding:8px 11px;font-size:12px}
+@media(max-width:620px){
+  .detailSectionHead{align-items:flex-start;flex-direction:column;gap:4px}
+  .detailTools{width:100%}
+  .detailToolBtn{flex:1 1 calc(50% - 4px)}
+}
