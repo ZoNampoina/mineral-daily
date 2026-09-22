@@ -1556,3 +1556,6 @@ body.menuOpen{overflow:hidden}
  .globalLoaderPopup{width:100%;min-width:0;max-width:none}
  .globalLoaderSpinner{width:24px;height:24px;min-width:24px}
 }
+
+.v217LoadMore{display:block;margin:12px auto 2px}
+.v217ListNote{padding:10px 2px;text-align:center}
