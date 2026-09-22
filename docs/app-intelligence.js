@@ -126,7 +126,8 @@ function azRenderSourcePanel(l){
   const updated=l.updated_at||l.lesson_date;
   const explicitHtml=explicit.length?'<div class="v20PublicSources"><div class="eyebrow">Sources enregistrées</div>'+explicit.map(s=>{
     const meta=[s.organization,typeof sourceTypeLabelV20==='function'?sourceTypeLabelV20(s.source_type):s.source_type,s.publication_year].filter(Boolean).join(' · ');
-    return '<div class="v20PublicSource"><b>'+esc(s.title)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+(s.url?'<a href="'+esc(s.url)+'" target="_blank" rel="noopener">Consulter</a>':'')+'</div>';
+    const safeUrl=/^https?:\/\//i.test(String(s.url||''))?s.url:'';
+    return '<div class="v20PublicSource"><b>'+esc(s.title)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+(safeUrl?'<a href="'+esc(safeUrl)+'" target="_blank" rel="noopener">Consulter</a>':'')+'</div>';
   }).join('')+'</div>':'';
   box.innerHTML=
    '<div class="card azQualityCard"><div class="azQualityScore"><strong>'+q.score+'%</strong><span>'+esc(q.label)+'</span></div>'+
