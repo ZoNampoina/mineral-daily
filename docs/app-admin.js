@@ -200,7 +200,7 @@ async function switchView(v){
  if(v==='admin'&&isAdmin())await loadAdmin();
  if(typeof onArizonaViewChange==='function')await onArizonaViewChange(v);
  if(typeof onArizonaIntelligenceViewChange==='function')await onArizonaIntelligenceViewChange(v);
- if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);
+ if(typeof onEngineerViewChange==='function')await onEngineerViewChange(v);
  if(typeof onArizonaV21ViewChange==='function')await onArizonaV21ViewChange(v);
  if(typeof onArizonaV215ViewChange==='function')await onArizonaV215ViewChange(v);
  if(typeof setMenuOpen==='function')setMenuOpen(false)

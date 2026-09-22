@@ -36,15 +36,9 @@ function renderExtras(){
 }
 
 async function onArizonaViewChange(view){
-  if(view==='compare'){
-    if(typeof ensureAllLessonDetails==='function')await withLoading('Chargement du comparateur…',()=>ensureAllLessonDetails(),{subtitle:'Préparation des données techniques.'});
-    renderComparePicker();
-  }
+  if(view==='compare')renderComparePicker();
   if(view==='collections')renderCollections();
-  if(view==='review'){
-    if(typeof ensureAllLessonDetails==='function')await withLoading('Chargement de la révision…',()=>ensureAllLessonDetails(),{subtitle:'Préparation des quiz et niveaux de maîtrise.'});
-    renderReviewDashboard();
-  }
+  if(view==='review')renderReviewDashboard();
 }
 
 function renderLessonExtras(l){
@@ -138,9 +132,14 @@ function renderCollections(){
 function renderComparePicker(){
   const box=$('comparePicker');if(!box)return;
   box.innerHTML=lessons.map(l=>'<label class="compareChoice"><input type="checkbox" class="compareCheck" value="'+l.id+'"><span><b>'+esc(l.name)+'</b><small>'+esc(compactSymbol(l))+'</small></span></label>').join('');
-  box.querySelectorAll('.compareCheck').forEach(ch=>ch.onchange=()=>{
+  box.querySelectorAll('.compareCheck').forEach(ch=>ch.onchange=async()=>{
     const selected=[...box.querySelectorAll('.compareCheck:checked')];
-    if(selected.length>4){ch.checked=false;toast('Maximum 4 minéraux à comparer.')}
+    if(selected.length>4){ch.checked=false;toast('Maximum 4 minéraux à comparer.');return}
+    if(ch.checked&&typeof requestLessonDataV218==='function'){
+      try{
+        await requestLessonDataV218(Number(ch.value),{title:'Chargement du minerai…',subtitle:'Préparation des données pour la comparaison.',delay:120});
+      }catch(e){console.warn(e);toast('Chargement du minerai impossible.')}
+    }
   });
 }
 
@@ -154,9 +153,14 @@ function compareProduction2025(l){
 }
 function compactText(v,n=130){v=String(v||'—').replace(/\s+/g,' ').trim();return v.length>n?v.slice(0,n-1)+'…':v}
 
-function runComparison(){
+async function runComparison(){
   const ids=[...document.querySelectorAll('#comparePicker .compareCheck:checked')].map(x=>Number(x.value));
   if(ids.length<2)return toast('Sélectionne au moins 2 minéraux.');
+  if(typeof ensureLessonDetails==='function'){
+    const load=()=>ensureLessonDetails(ids);
+    if(typeof withLoading==='function')await withLoading('Chargement des minéraux…',load,{subtitle:'Préparation des données techniques pour la comparaison.'});
+    else await load();
+  }
   const ls=ids.map(id=>lessons.find(l=>Number(l.id)===id)).filter(Boolean);
   const rows=[
     ['Symbole',l=>compactSymbol(l)],
