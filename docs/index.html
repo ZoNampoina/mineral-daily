@@ -59,6 +59,7 @@
     </div>
     <div class="menuUsageGroup">
       <div class="menuSectionLabel menuSectionInner">Ingénierie & analyse</div>
+      <button class="tab" data-view="engineer">Mode Ingénieur</button>
       <button class="tab" data-view="madagascar">Madagascar</button>
       <button class="tab" data-view="compare">Comparer</button>
       <button class="tab" data-view="calculators">Calculateurs</button>
@@ -126,6 +127,16 @@
     </div>
   </div>
   <div id="smartResults" class="azResultList"></div>
+</section>
+
+
+<section id="view-engineer" class="view hidden">
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
+  <div class="card cardPad engineerToolbar">
+    <div><div class="eyebrow">Mode Ingénieur</div><h2>Dossier technique structuré</h2><div class="small">Géologie → Exploration → Exploitation → Traitement → Économie → Madagascar.</div></div>
+    <select id="engineerLessonSelect" class="select"></select>
+  </div>
+  <div id="engineerWorkspace"></div>
 </section>
 
 <section id="view-madagascar" class="view hidden">
@@ -227,6 +238,6 @@
 </div></div>
 
 <div id="toast" class="toast"></div>
-<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-intelligence.js"></script><script src="./app-admin.js"></script>
+<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-intelligence.js"></script><script src="./app-engineer.js"></script><script src="./app-admin.js"></script>
 </body>
 </html>
