@@ -12,9 +12,16 @@ async function importLesson(){
   $('importText').value='';$('importMsg').textContent='Fiche publiée.';await loadLessons();if(typeof loadArizonaV20==='function')await loadArizonaV20();renderAll();await loadAdmin();toast('Fiche synchronisée sur tous les appareils.')
  }catch(e){$('importMsg').textContent=e.message}
 }
-function openEdit(id){
- if(!isAdmin())return;const l=lessons.find(x=>Number(x.id)===Number(id));if(!l)return;
- $('editId').value=l.id;$('editDate').value=l.lesson_date;$('editName').value=l.name;$('editSymbol').value=compactSymbol(l);$('editImages').value=(l.image_urls||[]).join('\n');$('editRaw').value=l.raw_text;if(typeof populateV20Editor==='function')populateV20Editor(l);$('editModal').classList.add('open')
+async function openEdit(id){
+ if(!isAdmin())return;
+ const run=async()=>{
+   const l=typeof ensureLessonDetail==='function'?await ensureLessonDetail(id):lessons.find(x=>Number(x.id)===Number(id));
+   if(!l)return;
+   if(typeof loadArizonaV20==='function')await loadArizonaV20(l.id);
+   $('editId').value=l.id;$('editDate').value=l.lesson_date;$('editName').value=l.name;$('editSymbol').value=compactSymbol(l);$('editImages').value=(l.image_urls||[]).join('\n');$('editRaw').value=l.raw_text||'';if(typeof populateV20Editor==='function')populateV20Editor(l);$('editModal').classList.add('open');
+ };
+ if(typeof withLoading==='function')return withLoading('Chargement de l’éditeur…',run,{subtitle:'Récupération de la fiche complète et de ses sources.'});
+ return run();
 }
 async function saveEdit(){
  if(!isAdmin())return;const id=Number($('editId').value);const status=$('v20DataStatus')?.value||'legacy';const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),structured_data:typeof collectStructuredDataV20==='function'?collectStructuredDataV20():{},data_status:status,last_verified_at:status==='verified'?new Date().toISOString():null,updated_by:session.user.id,updated_at:new Date().toISOString()};
