@@ -11,6 +11,7 @@ async function loadArizonaV21(force=false){
   if(!session)return;
   if(v21Loaded&&!force)return;
   if(v21Loading&&!force)return v21Loading;
+  const loadToken=typeof beginLoading==='function'?beginLoading(currentViewV217?.()==='knowledge'?'Chargement du Knowledge Graph…':'Chargement de Madagascar…',{delay:80,subtitle:'Synchronisation des données structurées.'}):null;
   v21Loading=(async()=>{
     const [e,l,r]=await Promise.all([
       sb.from('madagascar_entities').select('*').order('name',{ascending:true}),
@@ -23,7 +24,7 @@ async function loadArizonaV21(force=false){
     knowledgeRelationsV21=r.data||[];
     v21Loaded=true;
   })();
-  try{await v21Loading}finally{v21Loading=null}
+  try{await v21Loading}finally{v21Loading=null;if(loadToken&&typeof endLoading==='function')endLoading(loadToken)}
 }
 function v21LessonsForEntity(entityId){
   const ids=madagascarEntityLessonsV21.filter(x=>Number(x.entity_id)===Number(entityId)).map(x=>Number(x.lesson_id));
