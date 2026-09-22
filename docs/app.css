@@ -1168,3 +1168,30 @@ body.menuOpen{overflow:hidden}
  .logoutIconBtn{width:42px;min-width:42px}
  .profileModalPanel{width:calc(100% - 16px);padding:15px}
 }
+
+
+/* === ARIZONA V19.2 · correctifs thème, profil enrichi, à propos === */
+.menuHeadActions{display:flex;align-items:center;gap:7px}
+.menuThemeBtn{position:relative;overflow:hidden}
+.menuThemeBtn .themeSunGlyph,.menuThemeBtn .themeMoonGlyph{position:absolute;inset:0;display:grid;place-items:center;font-size:17px;transition:transform .2s ease,opacity .2s ease}
+.menuThemeBtn .themeSunGlyph{opacity:1;transform:scale(1)}
+.menuThemeBtn .themeMoonGlyph{opacity:0;transform:scale(.55)}
+.menuThemeBtn.isLight .themeSunGlyph{opacity:0;transform:scale(.55)}
+.menuThemeBtn.isLight .themeMoonGlyph{opacity:1;transform:scale(1)}
+.menuStandaloneTab{width:100%;text-align:left;border-radius:13px;padding:12px 14px;margin-bottom:2px}
+.profileEditorCard{gap:14px}
+.profileField{display:grid;gap:6px}
+.profileGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.adminProfileCell{min-width:190px}
+.adminProfileCell div{font-size:11px;line-height:1.5;color:var(--muted)}
+.aboutHero p{max-width:900px;color:var(--muted);line-height:1.65;margin-bottom:0}
+.aboutGrid{display:grid;grid-template-columns:1.2fr .8fr;gap:12px;margin-top:12px}
+.aboutGrid h3{margin:7px 0}
+.aboutVersion{font-size:38px;line-height:1;font-weight:950;color:var(--gold2);margin:10px 0}
+.aboutCapabilities{margin-top:12px}
+.aboutCapabilities h3{margin:7px 0}
+@media(max-width:620px){
+ .profileGrid{grid-template-columns:1fr}
+ .aboutGrid{grid-template-columns:1fr}
+ .menuHeadActions{gap:5px}
+}

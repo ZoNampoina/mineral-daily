@@ -135,6 +135,13 @@ function renderProfileIdentity(){
  if($('drawerRole'))$('drawerRole').textContent=role;
  if($('userInitial'))$('userInitial').textContent=(name.charAt(0)||'U').toLocaleUpperCase('fr-FR');
  if($('profileDisplayName'))$('profileDisplayName').value=name;
+ if($('profileBirthDate')){
+   $('profileBirthDate').value=profile?.birth_date||'';
+   $('profileBirthDate').max=new Date().toISOString().slice(0,10);
+ }
+ if($('profileGender'))$('profileGender').value=profile?.gender||'';
+ if($('profileDomain'))$('profileDomain').value=profile?.domain||'';
+ if($('profileStudyField'))$('profileStudyField').value=profile?.study_field||'';
 }
 function openProfileEditor(){
  if(!profile)return;
@@ -146,17 +153,31 @@ async function saveProfileDisplayName(){
  if(!session||!profile)return;
  const input=$('profileDisplayName');
  const name=String(input?.value||'').replace(/\s+/g,' ').trim();
+ const birthDate=String($('profileBirthDate')?.value||'').trim();
+ const gender=String($('profileGender')?.value||'').trim();
+ const domain=String($('profileDomain')?.value||'').replace(/\s+/g,' ').trim();
+ const studyField=String($('profileStudyField')?.value||'').replace(/\s+/g,' ').trim();
  if(!name){toast('Le nom ne peut pas être vide.');input?.focus();return}
  if(name.length>50){toast('Le nom est limité à 50 caractères.');return}
+ if(domain.length>120||studyField.length>120){toast('Les champs Domaine et Domaine d’étude sont limités à 120 caractères.');return}
+ if(birthDate&&birthDate>new Date().toISOString().slice(0,10)){toast('La date de naissance ne peut pas être dans le futur.');return}
+ const payload={
+   display_name:name,
+   birth_date:birthDate||null,
+   gender:gender||null,
+   domain:domain||null,
+   study_field:studyField||null
+ };
  const btn=$('saveProfileName');if(btn)btn.disabled=true;
- const {data,error}=await sb.from('profiles').update({display_name:name}).eq('user_id',session.user.id).select('*').single();
+ const {data,error}=await sb.from('profiles').update(payload).eq('user_id',session.user.id).select('*').single();
  if(btn)btn.disabled=false;
  if(error)return toast('Modification impossible : '+error.message);
- profile=data||{...profile,display_name:name};
+ profile=data||{...profile,...payload};
  renderProfileIdentity();
  $('profileModal')?.classList.remove('open');
+ if(typeof setMenuOpen==='function')setMenuOpen(false);
  if(isAdmin()&&typeof loadAdmin==='function')await loadAdmin();
- toast('Nom utilisateur mis à jour.');
+ toast('Profil utilisateur mis à jour.');
 }
 async function loadProfile(){
  for(let i=0;i<8;i++){
@@ -195,8 +216,12 @@ function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgres
 function applyTheme(){
  const theme=localStorage.getItem('az_theme')||'dark',isLight=theme==='light';
  document.body.classList.toggle('light',isLight);
- const b=$('logoThemeBtn');
- if(b){b.classList.toggle('isLight',isLight);b.title=isLight?'Passer en mode nuit':'Passer en mode jour';b.setAttribute('aria-label',b.title)}
+ const b=$('menuThemeBtn');
+ if(b){
+   b.classList.toggle('isLight',isLight);
+   b.title=isLight?'Passer en mode nuit':'Passer en mode jour';
+   b.setAttribute('aria-label',b.title);
+ }
 }
 function renderHome(){
  const l=lessons[0];$('countLessons').textContent=lessons.length;$('countFav').textContent=favorites.size;

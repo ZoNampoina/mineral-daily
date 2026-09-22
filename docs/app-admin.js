@@ -50,7 +50,13 @@ function renderAdmin(){
 
  $('usersBody').innerHTML=adminUsers.map(u=>{
    const self=u.user_id===session.user.id;
-   return '<tr><td><b>'+esc(String(u.display_name||'Utilisateur').trim()||'Utilisateur')+'</b></td><td>'+esc(u.email)+'</td><td style="font-family:monospace">'+esc(u.user_id)+'</td><td><select class="select roleSelect" data-user="'+u.user_id+'" style="min-width:140px"><option value="standard"'+(u.role==='standard'?' selected':'')+'>Standard</option><option value="admin"'+(u.role==='admin'?' selected':'')+'>Administrateur</option></select></td><td>'+esc(new Date(u.created_at).toLocaleString('fr-FR'))+'</td><td>'+(u.last_seen_at?esc(new Date(u.last_seen_at).toLocaleString('fr-FR')):'—')+'</td><td><button class="btn danger deleteUserBtn" data-delete-user="'+u.user_id+'" '+(self?'disabled title="Impossible de supprimer votre propre compte"':'')+'>Supprimer</button></td></tr>'
+   const profileBits=[
+     u.birth_date?'Naissance : '+new Date(u.birth_date+'T12:00:00').toLocaleDateString('fr-FR'):'',
+     u.gender?'Genre : '+u.gender:'',
+     u.domain?'Domaine : '+u.domain:'',
+     u.study_field?'Études : '+u.study_field:''
+   ].filter(Boolean);
+   return '<tr><td><b>'+esc(String(u.display_name||'Utilisateur').trim()||'Utilisateur')+'</b></td><td class="adminProfileCell">'+(profileBits.length?profileBits.map(x=>'<div>'+esc(x)+'</div>').join(''):'<span class="small">Non renseigné</span>')+'</td><td>'+esc(u.email)+'</td><td style="font-family:monospace">'+esc(u.user_id)+'</td><td><select class="select roleSelect" data-user="'+u.user_id+'" style="min-width:140px"><option value="standard"'+(u.role==='standard'?' selected':'')+'>Standard</option><option value="admin"'+(u.role==='admin'?' selected':'')+'>Administrateur</option></select></td><td>'+esc(new Date(u.created_at).toLocaleString('fr-FR'))+'</td><td>'+(u.last_seen_at?esc(new Date(u.last_seen_at).toLocaleString('fr-FR')):'—')+'</td><td><button class="btn danger deleteUserBtn" data-delete-user="'+u.user_id+'" '+(self?'disabled title="Impossible de supprimer votre propre compte"':'')+'>Supprimer</button></td></tr>'
  }).join('');
 
  document.querySelectorAll('.roleSelect').forEach(s=>s.onchange=()=>changeRole(s.dataset.user,s.value));
@@ -158,7 +164,7 @@ function renderLogs(){
 function switchView(v){
  document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));
  $('view-'+v).classList.remove('hidden');
- document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
+ document.querySelectorAll('#appMenu [data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
  if(v==='admin'&&isAdmin())loadAdmin();
  if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);if(typeof onArizonaIntelligenceViewChange==='function')onArizonaIntelligenceViewChange(v);if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);
  if(typeof setMenuOpen==='function')setMenuOpen(false)
@@ -171,7 +177,7 @@ function switchAdmin(sub){
  if(sub==='dashboard') renderAdminAnalytics();
 }
 $('loginBtn').onclick=signIn;$('signupBtn').onclick=signUp;$('logoutBtn').onclick=logout;if($('togglePassword'))$('togglePassword').onchange=()=>{const p=$('password'),c=$('togglePassword'),s=c.closest('.passwordCheck')?.querySelector('span');p.type=c.checked?'text':'password';if(s)s.textContent=c.checked?'Masquer':'Afficher';};
-if($('logoThemeBtn'))$('logoThemeBtn').onclick=()=>{const next=document.body.classList.contains('light')?'dark':'light';localStorage.setItem('az_theme',next);applyTheme()};
+if($('menuThemeBtn'))$('menuThemeBtn').onclick=()=>{const next=document.body.classList.contains('light')?'dark':'light';localStorage.setItem('az_theme',next);applyTheme()};
 if($('userProfileBtn'))$('userProfileBtn').onclick=openProfileEditor;
 if($('closeProfileModal'))$('closeProfileModal').onclick=()=>$('profileModal').classList.remove('open');
 if($('saveProfileName'))$('saveProfileName').onclick=saveProfileDisplayName;
@@ -179,7 +185,7 @@ if($('profileDisplayName'))$('profileDisplayName').onkeydown=e=>{if(e.key==='Ent
 if($('profileModal'))$('profileModal').addEventListener('click',e=>{if(e.target===$('profileModal'))$('profileModal').classList.remove('open')});
 $('openToday').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));$('todayName').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));if($('lessonsKpi'))$('lessonsKpi').onclick=()=>{switchView('history');setTimeout(()=>$('historySearch')?.focus(),80)};if($('favoritesKpi'))$('favoritesKpi').onclick=()=>switchView('favorites');$('closeLesson').onclick=()=>$('lessonModal').classList.remove('open');$('modalFav').onclick=()=>activeLesson&&toggleFavorite(Number(activeLesson.id));$('editLessonBtn').onclick=()=>activeLesson&&openEdit(Number(activeLesson.id));
 $('historySearch').oninput=renderLessonLists;$('importBtn').onclick=importLesson;$('newLessonBtn').onclick=newLesson;$('closeEdit').onclick=()=>$('editModal').classList.remove('open');$('saveEdit').onclick=async()=>{if($('editId').value)await saveEdit();else{const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),created_by:session.user.id,updated_by:session.user.id};const {error}=await sb.from('arizona_lessons').insert(payload);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();renderAll();await loadAdmin();toast('Fiche créée.')}};$('deleteLesson').onclick=deleteLesson;
-if($('markNotificationsRead'))$('markNotificationsRead').onclick=()=>markNotificationsRead(false);if($('refreshAdminAnalytics'))$('refreshAdminAnalytics').onclick=async()=>{await loadAdmin();toast('Statistiques actualisées.');};$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.backTodayBtn').forEach(b=>b.onclick=()=>switchView('home'));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
+if($('markNotificationsRead'))$('markNotificationsRead').onclick=()=>markNotificationsRead(false);if($('refreshAdminAnalytics'))$('refreshAdminAnalytics').onclick=async()=>{await loadAdmin();toast('Statistiques actualisées.');};$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#appMenu [data-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.backTodayBtn').forEach(b=>b.onclick=()=>switchView('home'));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
 $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('lessonModal').classList.remove('open')});$('editModal').addEventListener('click',e=>{if(e.target===$('editModal'))$('editModal').classList.remove('open')});
 (async()=>{
  applyTheme();
