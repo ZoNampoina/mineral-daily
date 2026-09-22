@@ -1335,3 +1335,66 @@ body.menuOpen{overflow:hidden}
  .v20SourceForm .v20SmallTextarea,.v20SourceForm #v20AddSourceBtn{grid-column:auto}
  .v20VersionRow{align-items:flex-start}
 }
+
+
+/* === ARIZONA V21 · Madagascar structuré + Knowledge Graph === */
+.v21MgFilters{display:grid;grid-template-columns:minmax(0,1fr) 180px 200px;gap:8px;margin-top:14px}
+.v21MgGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.v21MgEntityCard{padding:15px;cursor:pointer;transition:.18s ease}
+.v21MgEntityCard:hover{transform:translateY(-1px);border-color:rgba(127,127,127,.35)}
+.v21EntityHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.v21EntityHead h3{margin:3px 0 0;font-size:17px}
+.v21EntityLocation{margin:9px 0 5px;font-size:12px;font-weight:700}
+.v21LessonChip{background:transparent;cursor:pointer}
+.v21AdminPanel{margin-top:14px}
+.v21EditorHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.v21LessonPicker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;max-height:180px;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:12px;margin-top:6px}
+.v21LessonPick{display:flex;gap:7px;align-items:center;font-size:11px;color:var(--muted)}
+.v21EntityModalPanel{width:min(760px,calc(100% - 24px))}
+.v21EntityDetailGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.v21EntityDetailGrid>div{display:grid;gap:2px;padding:9px 10px;border:1px solid var(--line);border-radius:11px}
+.v21EntityDetailGrid span{font-size:10px;color:var(--muted)}
+.v21EntityDetailGrid b{font-size:12px}
+.v21EntityDescription{margin-top:10px;line-height:1.55;color:var(--muted)}
+.v21ModalAdminActions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+
+.v21KnowledgeHero{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,320px);align-items:end;gap:16px;margin-bottom:12px}
+.v21KnowledgeLayout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.8fr);gap:12px}
+.v21GraphCard{padding:8px;min-height:520px;overflow:hidden}
+.v21GraphSvg{width:100%;height:520px;display:block}
+.v21GraphEdge{stroke:var(--line);stroke-width:2}
+.v21GraphCenter circle{fill:var(--panel2);stroke:var(--gold2);stroke-width:3}
+.v21GraphNode{cursor:pointer}
+.v21GraphNode circle{fill:var(--panel);stroke:var(--line);stroke-width:2;transition:.18s ease}
+.v21GraphNode:hover circle{stroke:var(--gold2);transform:scale(1.04);transform-origin:center}
+.v21GraphCenter text,.v21GraphNode text{fill:var(--text);font-size:12px;font-weight:800;pointer-events:none}
+.v21GraphNodeType{fill:var(--muted)!important;font-size:9px!important;font-weight:600!important}
+.v21RelationList{display:grid;gap:7px;margin-top:10px;max-height:470px;overflow:auto}
+.v21RelationRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:start;padding:9px 10px;border:1px solid var(--line);border-radius:11px}
+.v21RelationRow>div{display:grid;gap:2px}
+.v21RelationRow b{font-size:11px;color:var(--gold2)}
+.v21RelationRow span{font-size:12px;font-weight:750}
+.v21RelationRow small{font-size:10px;color:var(--muted)}
+.v21RelationAdmin{margin-top:12px}
+
+@media(max-width:960px){
+ .v21MgFilters{grid-template-columns:1fr 1fr}
+ .v21MgFilters input{grid-column:1/-1}
+ .v21KnowledgeLayout{grid-template-columns:1fr}
+ .v21RelationList{max-height:none}
+}
+@media(max-width:700px){
+ .v21MgGrid{grid-template-columns:1fr}
+ .v21LessonPicker{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .v21KnowledgeHero{grid-template-columns:1fr}
+ .v21GraphCard{min-height:390px}
+ .v21GraphSvg{height:390px}
+ .v21EntityDetailGrid{grid-template-columns:1fr}
+}
+@media(max-width:460px){
+ .v21MgFilters{grid-template-columns:1fr}
+ .v21MgFilters input{grid-column:auto}
+ .v21LessonPicker{grid-template-columns:1fr}
+ .v21GraphCard{padding:2px;min-height:340px}
+ .v21GraphSvg{height:340px}
+}
