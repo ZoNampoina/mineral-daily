@@ -111,6 +111,7 @@ async function enterApp(){
  if(typeof loadArizonaExtras==='function')await loadArizonaExtras();
  if(typeof loadArizonaV20==='function')await loadArizonaV20();
  if(typeof loadArizonaV21==='function')await loadArizonaV21();
+ if(typeof loadArizonaV215==='function')await loadArizonaV215();
  await touchActivity();
  await recordLogin();
  renderAll();
@@ -214,7 +215,7 @@ async function loadLessons(){const {data,error}=await sb.from('arizona_lessons')
 async function loadFavorites(){const {data,error}=await sb.from('user_favorites').select('lesson_id').eq('user_id',session.user.id);if(error)throw error;favorites=new Set((data||[]).map(x=>Number(x.lesson_id)))}
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
 
-function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence();if(typeof renderArizonaV21==='function')renderArizonaV21()}
+function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence();if(typeof renderArizonaV21==='function')renderArizonaV21();if(typeof renderArizonaV215==='function')renderArizonaV215()}
 function applyTheme(){
  const theme=localStorage.getItem('az_theme')||'dark',isLight=theme==='light';
  document.body.classList.toggle('light',isLight);

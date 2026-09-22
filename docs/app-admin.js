@@ -166,7 +166,7 @@ function switchView(v){
  $('view-'+v).classList.remove('hidden');
  document.querySelectorAll('#appMenu [data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
  if(v==='admin'&&isAdmin())loadAdmin();
- if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);if(typeof onArizonaIntelligenceViewChange==='function')onArizonaIntelligenceViewChange(v);if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);if(typeof onArizonaV21ViewChange==='function')onArizonaV21ViewChange(v);
+ if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);if(typeof onArizonaIntelligenceViewChange==='function')onArizonaIntelligenceViewChange(v);if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);if(typeof onArizonaV21ViewChange==='function')onArizonaV21ViewChange(v);if(typeof onArizonaV215ViewChange==='function')onArizonaV215ViewChange(v);
  if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
 function switchAdmin(sub){
@@ -203,6 +203,7 @@ async function refreshArizona(showToast=false){
     await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
     if(typeof loadArizonaV20==='function')await loadArizonaV20();
     if(typeof loadArizonaV21==='function')await loadArizonaV21();
+    if(typeof loadArizonaV215==='function')await loadArizonaV215();
     renderAll();
     if(isAdmin()) await loadAdmin();
     const after=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';

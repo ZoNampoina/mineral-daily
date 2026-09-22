@@ -77,6 +77,10 @@
       <button class="tab" data-view="compare">Comparer</button>
       <button class="tab" data-view="calculators">Calculateurs</button>
     </div>
+    <div class="menuUsageGroup">
+      <div class="menuSectionLabel menuSectionInner">Terrain & projets</div>
+      <button class="tab" data-view="projects">Projets</button>
+    </div>
     <div class="menuUsageGroup adminOnly hidden">
       <div class="menuSectionLabel menuSectionInner">Gestion</div>
       <button class="tab adminOnly hidden" data-view="admin">Administration</button>
@@ -196,7 +200,7 @@
     <select id="knowledgeLessonSelect" class="select"></select>
   </div>
   <div class="v21KnowledgeLayout">
-    <div class="card v21GraphCard"><svg id="knowledgeGraphSvg" class="v21GraphSvg" role="img" aria-label="Graphe de connaissances"></svg></div>
+    <div class="card v21GraphCard"><svg id="knowledgeGraphSvg" class="v21GraphSvg" role="img" aria-label="Graphe de connaissances"></svg><div class="v21GraphLegend"><span><i class="derived"></i>Relation dérivée</span><span><i class="curated"></i>Relation validée</span></div></div>
     <div class="card cardPad"><div class="eyebrow">Relations</div><div id="knowledgeRelationList" class="v21RelationList"></div></div>
   </div>
   <div class="card cardPad adminOnly hidden v21RelationAdmin">
@@ -244,6 +248,25 @@
   </div>
 </section>
 
+<section id="view-projects" class="view hidden">
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
+  <div class="card cardPad v215ProjectsHero">
+    <div>
+      <div class="eyebrow">ARIZONA V21.5</div>
+      <h2>Mode Projet professionnel</h2>
+      <div class="small">Centralise un projet minier, ses campagnes terrain, ses échantillons et ses résultats analytiques.</div>
+    </div>
+    <button id="v215NewProjectBtn" class="btn primary" type="button">+ Nouveau projet</button>
+  </div>
+  <div class="v215ProjectLayout">
+    <aside class="v215ProjectSidebar">
+      <input id="v215ProjectSearch" class="input" placeholder="Rechercher un projet…">
+      <div id="v215ProjectList" class="v215ProjectList"></div>
+    </aside>
+    <section id="v215ProjectWorkspace" class="v215ProjectWorkspace"></section>
+  </div>
+</section>
+
 <section id="view-about" class="view hidden">
   <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
   <div class="aboutHero card cardPad">
@@ -253,7 +276,7 @@
   </div>
   <div class="aboutGrid">
     <div class="card cardPad"><div class="eyebrow">Fondateur</div><h3>RAZAFINDRAKOTO Arijaona Zo Nampoina</h3><div class="small">Conception et développement du projet ARIZONA.</div></div>
-    <div class="card cardPad"><div class="eyebrow">Version actuelle</div><div class="aboutVersion">V21</div><div class="small">Base Madagascar structurée · Knowledge Graph minier.</div></div>
+    <div class="card cardPad"><div class="eyebrow">Version actuelle</div><div class="aboutVersion">V21.5</div><div class="small">Mode Projet · campagnes terrain · échantillons · analyses · Knowledge Graph amélioré.</div></div>
   </div>
   <div class="card cardPad aboutCapabilities">
     <div class="eyebrow">Mission</div>
@@ -387,7 +410,15 @@
   <div id="v21MgModalBody"></div>
 </div></div>
 
+<div id="v215EditorModal" class="modal"><div class="profileModalPanel v215EditorPanel">
+  <div class="modalHead">
+    <div><div class="eyebrow">Mode Projet</div><h2 id="v215EditorTitle" style="margin:4px 0 0">Éditeur</h2></div>
+    <button id="v215CloseEditor" class="btn iconCloseBtn" type="button" aria-label="Fermer">✕</button>
+  </div>
+  <div id="v215EditorBody"></div>
+</div></div>
+
 <div id="toast" class="toast"></div>
-<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-intelligence.js"></script><script src="./app-engineer.js"></script><script src="./app-v20.js"></script><script src="./app-v21.js"></script><script src="./app-admin.js"></script>
+<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-intelligence.js"></script><script src="./app-engineer.js"></script><script src="./app-v20.js"></script><script src="./app-v21.js"></script><script src="./app-v21-5.js"></script><script src="./app-admin.js"></script>
 </body>
 </html>

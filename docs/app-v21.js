@@ -217,18 +217,36 @@ function renderKnowledgeGraphV21(){
   const sel=$('knowledgeLessonSelect'),svg=$('knowledgeGraphSvg'),list=$('knowledgeRelationList');if(!sel||!svg||!list)return;
   const l=lessons.find(x=>String(x.id)===String(sel.value));if(!l){svg.innerHTML='';list.innerHTML='<div class="small">Aucune fiche.</div>';return}
   const relations=graphRelationsForLessonV21(l).slice(0,18);
-  const w=900,h=520,cx=450,cy=260,radius=190;
+  const w=900,h=540,cx=450,cy=270,radius=205;
   const nodes=relations.map((rel,i)=>{
     const target=v21GraphTarget(rel),a=(Math.PI*2*i/Math.max(relations.length,1))-Math.PI/2;
-    return {rel,target,x:cx+Math.cos(a)*radius,y:cy+Math.sin(a)*radius};
+    return {rel,target,a,x:cx+Math.cos(a)*radius,y:cy+Math.sin(a)*radius};
   });
-  const lineHtml=nodes.map(n=>'<line x1="'+cx+'" y1="'+cy+'" x2="'+n.x.toFixed(1)+'" y2="'+n.y.toFixed(1)+'" class="v21GraphEdge"/>').join('');
+  const edges=nodes.map((n,i)=>{
+    const dx=n.x-cx,dy=n.y-cy;
+    const x1=cx+dx*.36,y1=cy+dy*.36,x2=cx+dx*.75,y2=cy+dy*.75;
+    const mx=cx+dx*.555,my=cy+dy*.555;
+    const relation=v21RelationLabel(n.rel.relation_type);
+    const width=Math.min(145,Math.max(66,relation.length*6.3+20));
+    return '<g class="v21GraphEdgeGroup '+(n.rel.derived?'derived':'curated')+'">'+
+      '<path d="M '+x1.toFixed(1)+' '+y1.toFixed(1)+' L '+x2.toFixed(1)+' '+y2.toFixed(1)+'" class="v21GraphEdge" marker-end="url(#v21Arrow)"/>'+
+      '<g class="v21GraphEdgeLabel" transform="translate('+mx.toFixed(1)+' '+my.toFixed(1)+')">'+
+        '<rect x="'+(-width/2).toFixed(1)+'" y="-12" width="'+width.toFixed(1)+'" height="24" rx="12"/>'+
+        '<text text-anchor="middle" y="4">'+esc(compactText(relation,22))+'</text>'+
+      '</g>'+
+    '</g>';
+  }).join('');
   const nodeHtml=nodes.map((n,i)=>{
     const label=esc(compactText(n.target.label,28));
-    return '<g class="v21GraphNode" data-index="'+i+'" transform="translate('+n.x.toFixed(1)+' '+n.y.toFixed(1)+')"><circle r="47"/><text text-anchor="middle" y="-4">'+label+'</text><text class="v21GraphNodeType" text-anchor="middle" y="17">'+esc(v21RelationLabel(n.rel.relation_type))+'</text></g>';
+    const kind=({lesson:'Fiche',entity:'Madagascar',process:'Procédé',use:'Usage',deposit_type:'Gisement',concept:'Concept'})[n.target.kind]||n.target.kind;
+    return '<g class="v21GraphNode" data-index="'+i+'" transform="translate('+n.x.toFixed(1)+' '+n.y.toFixed(1)+')"><circle r="49"/><text text-anchor="middle" y="-3">'+label+'</text><text class="v21GraphNodeType" text-anchor="middle" y="18">'+esc(kind)+'</text></g>';
   }).join('');
   svg.setAttribute('viewBox','0 0 '+w+' '+h);
-  svg.innerHTML=lineHtml+'<g class="v21GraphCenter" transform="translate('+cx+' '+cy+')"><circle r="70"/><text text-anchor="middle" y="-3">'+esc(compactText(l.name,24))+'</text><text class="v21GraphNodeType" text-anchor="middle" y="20">'+esc(compactSymbol(l))+'</text></g>'+nodeHtml;
+  svg.innerHTML=
+    '<defs><marker id="v21Arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3.5 L0,7 z" class="v21GraphArrow"/></marker></defs>'+
+    edges+
+    '<g class="v21GraphCenter" transform="translate('+cx+' '+cy+')"><circle r="72"/><text text-anchor="middle" y="-3">'+esc(compactText(l.name,24))+'</text><text class="v21GraphNodeType" text-anchor="middle" y="20">'+esc(compactSymbol(l))+'</text></g>'+
+    nodeHtml;
   svg.querySelectorAll('.v21GraphNode').forEach(g=>g.onclick=()=>{
     const n=nodes[Number(g.dataset.index)];if(!n)return;
     if(n.target.kind==='lesson'&&n.target.id)openLesson(Number(n.target.id));
@@ -236,7 +254,7 @@ function renderKnowledgeGraphV21(){
   });
   list.innerHTML=relations.length?relations.map(r=>{
     const t=v21GraphTarget(r);
-    return '<div class="v21RelationRow"><div><b>'+esc(v21RelationLabel(r.relation_type))+'</b><span>'+esc(t.label)+'</span><small>'+esc(r.derived?'Relation dérivée automatiquement':r.note||'Relation validée')+'</small></div>'+(isAdmin()&&!r.derived?'<button class="plainIcon v21DeleteRelation" data-id="'+r.id+'" title="Supprimer">×</button>':'')+'</div>';
+    return '<div class="v21RelationRow '+(r.derived?'derived':'curated')+'"><div class="v21RelationFlow"><span class="v21RelationSource">'+esc(compactText(l.name,22))+'</span><span class="v21RelationArrow">→</span><span class="v21RelationTarget">'+esc(t.label)+'</span></div><div class="v21RelationMeta"><b>'+esc(v21RelationLabel(r.relation_type))+'</b><small>'+esc(r.derived?'Relation dérivée automatiquement':r.note||'Relation validée')+'</small></div>'+(isAdmin()&&!r.derived?'<button class="plainIcon v21DeleteRelation" data-id="'+r.id+'" title="Supprimer">×</button>':'')+'</div>';
   }).join(''):'<div class="small">Aucune relation disponible pour cette fiche.</div>';
   list.querySelectorAll('.v21DeleteRelation').forEach(b=>b.onclick=()=>deleteKnowledgeRelationV21(Number(b.dataset.id)));
   renderKnowledgeAdminV21(l);
