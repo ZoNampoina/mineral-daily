@@ -141,7 +141,6 @@ function azRenderSourcePanel(l){
 function renderArizonaIntelligence(){
   azRenderDashboard();
   azRenderExplorer();
-  if(typeof renderMadagascarV21==='function')renderMadagascarV21();else azRenderMadagascar();
   if(activeLesson)azRenderSourcePanel(activeLesson);
 }
 function onArizonaIntelligenceViewChange(view){
