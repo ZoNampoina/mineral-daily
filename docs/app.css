@@ -114,3 +114,46 @@ th{color:var(--gold2);text-transform:uppercase;letter-spacing:.06em;font-size:10
   .gallery{grid-template-columns:1fr 1fr}.gallery img,.gallery img:first-child{height:150px;grid-row:auto}.gallery img:first-child{grid-column:1/-1;height:240px}
   .adminStats{grid-template-columns:1fr 1fr}.modalPanel{padding:14px}.modalHead{top:-14px}
 }
+/* Android / small-screen overflow hardening */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+img,svg,video,canvas{max-width:100%}
+.brandBlock,.topActions,.heroMain,.lessonMain,.lessonActions,.modalHead,.grid2,.searchRow{min-width:0}
+.brandName,.lessonTitle,.lessonDesc,.lessonSummary,.summary,.detailBody,.kv .k,.kv .v,.small,th,td,button,input,textarea,select{
+  overflow-wrap:anywhere;word-break:normal
+}
+input,textarea,select,button{max-width:100%}
+.tableWrap{max-width:100%;-webkit-overflow-scrolling:touch}
+@media(max-width:620px){
+  .topbar{display:grid;grid-template-columns:1fr;gap:10px}
+  .topActions{width:100%;display:flex;flex-wrap:wrap;justify-content:flex-start}
+  .topActions .btn,.topActions .roleBadge{flex:0 0 auto}
+  .brandBlock{width:100%}
+  .brandName{font-size:18px;white-space:normal;line-height:1.15}
+  .heroMain{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
+  .mineralName{font-size:clamp(30px,12vw,46px);overflow-wrap:anywhere}
+  .symbol{font-size:34px;max-width:72px}
+  .lessonCard{grid-template-columns:62px minmax(0,1fr)}
+  .lessonActions{grid-column:1/-1;display:flex;flex-wrap:wrap;padding-left:0}
+  .lessonActions .btn{flex:1 1 auto}
+  .detailCard summary{align-items:center}
+  .kv{grid-template-columns:1fr}
+  .kv .k{padding-bottom:3px;border-bottom:0}
+  .kv .v{padding-top:3px}
+  .modalPanel{width:100%;max-width:100vw}
+  .modalHead{display:grid;grid-template-columns:1fr;gap:9px}
+  .modalHead>div:last-child{display:flex;flex-wrap:wrap}
+  .tabs{padding-bottom:8px}
+  .tab{flex:0 0 auto}
+  .searchRow{display:grid;grid-template-columns:1fr}
+  .searchRow .select{max-width:none!important}
+  table{min-width:640px}
+}
+@media(max-width:390px){
+  .shell{padding-left:9px;padding-right:9px}
+  .cardPad,.hero{padding:14px}
+  .kpis{grid-template-columns:1fr 1fr}
+  .btn{padding:9px 10px}
+  .roleBadge{font-size:9px}
+  .gallery{grid-template-columns:1fr}
+  .gallery img,.gallery img:first-child{grid-column:auto;height:210px}
+}
