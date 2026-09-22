@@ -85,14 +85,17 @@ function renderNotifications(){
  badge.classList.toggle('hidden',unread===0);
  box.innerHTML=adminNotifications.length?adminNotifications.map(n=>'<div class="card notificationItem '+(!n.read_at?'unread':'')+'"><div class="notificationDot"></div><div><div class="lessonTitle">'+esc(n.email||'Utilisateur Standard')+'</div><div class="small">'+esc(n.message)+'</div><div class="lessonDesc">'+esc(new Date(n.created_at).toLocaleString('fr-FR'))+'</div></div></div>').join(''):'<div class="card cardPad small">Aucune notification de connexion Standard.</div>';
 }
-async function markNotificationsRead(){
+async function markNotificationsRead(silent=false){
  if(!isAdmin())return;
- const ids=adminNotifications.filter(n=>!n.read_at).map(n=>n.id);
- if(!ids.length)return toast('Aucune notification non lue.');
- const {error}=await sb.from('admin_notifications').update({read_at:new Date().toISOString()}).in('id',ids);
- if(error)return toast(error.message);
- await loadAdmin();
- toast('Notifications marquées comme lues.');
+ const unread=adminNotifications.filter(n=>!n.read_at);
+ const ids=unread.map(n=>n.id);
+ if(!ids.length){if(!silent)toast('Aucune notification non lue.');return}
+ const now=new Date().toISOString();
+ const {error}=await sb.from('admin_notifications').update({read_at:now}).in('id',ids);
+ if(error){if(!silent)toast(error.message);return}
+ adminNotifications=adminNotifications.map(n=>ids.includes(n.id)?{...n,read_at:now}:n);
+ renderNotifications();
+ if(!silent)toast('Notifications marquées comme lues.');
 }
 function renderLogs(){
  const q=$('logSearch').value.trim().toLowerCase(),act=$('logAction').value;const rows=auditLogs.filter(l=>(!act||l.action===act)&&(!q||(String(l.actor_email||'')+' '+l.action+' '+l.entity_type+' '+String(l.entity_id||'')+' '+JSON.stringify(l.metadata||{})).toLowerCase().includes(q)));
@@ -101,12 +104,17 @@ function renderLogs(){
 function switchView(v){
  document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));$('view-'+v).classList.remove('hidden');document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));if(v==='admin'&&isAdmin())loadAdmin();if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
-function switchAdmin(sub){document.querySelectorAll('.adminPane').forEach(e=>e.classList.add('hidden'));$('admin-'+sub).classList.remove('hidden');document.querySelectorAll('.adminSub').forEach(e=>e.classList.toggle('active',e.dataset.sub===sub))}
-$('loginBtn').onclick=signIn;$('signupBtn').onclick=signUp;$('logoutBtn').onclick=logout;if($('togglePassword'))$('togglePassword').onclick=()=>{const p=$('password'),b=$('togglePassword'),show=p.type==='password';p.type=show?'text':'password';b.textContent=show?'Masquer':'Afficher';b.setAttribute('aria-label',show?'Masquer le mot de passe':'Afficher le mot de passe');b.title=show?'Masquer le mot de passe':'Afficher le mot de passe'};
+function switchAdmin(sub){
+ document.querySelectorAll('.adminPane').forEach(e=>e.classList.add('hidden'));
+ $('admin-'+sub).classList.remove('hidden');
+ document.querySelectorAll('.adminSub').forEach(e=>e.classList.toggle('active',e.dataset.sub===sub));
+ if(sub==='notifications') markNotificationsRead(true);
+}
+$('loginBtn').onclick=signIn;$('signupBtn').onclick=signUp;$('logoutBtn').onclick=logout;if($('togglePassword'))$('togglePassword').onchange=()=>{const p=$('password'),c=$('togglePassword');p.type=c.checked?'text':'password';};
 $('themeBtn').onclick=()=>{const next=document.body.classList.contains('light')?'dark':'light';localStorage.setItem('az_theme',next);applyTheme()};
 $('openToday').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));$('todayName').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));if($('lessonsKpi'))$('lessonsKpi').onclick=()=>{switchView('history');setTimeout(()=>$('historySearch')?.focus(),80)};if($('favoritesKpi'))$('favoritesKpi').onclick=()=>switchView('favorites');$('closeLesson').onclick=()=>$('lessonModal').classList.remove('open');$('modalFav').onclick=()=>activeLesson&&toggleFavorite(Number(activeLesson.id));$('editLessonBtn').onclick=()=>activeLesson&&openEdit(Number(activeLesson.id));
 $('historySearch').oninput=renderLessonLists;$('importBtn').onclick=importLesson;$('newLessonBtn').onclick=newLesson;$('closeEdit').onclick=()=>$('editModal').classList.remove('open');$('saveEdit').onclick=async()=>{if($('editId').value)await saveEdit();else{const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),created_by:session.user.id,updated_by:session.user.id};const {error}=await sb.from('arizona_lessons').insert(payload);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();renderAll();await loadAdmin();toast('Fiche créée.')}};$('deleteLesson').onclick=deleteLesson;
-if($('markNotificationsRead'))$('markNotificationsRead').onclick=markNotificationsRead;$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.backTodayBtn').forEach(b=>b.onclick=()=>switchView('home'));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
+if($('markNotificationsRead'))$('markNotificationsRead').onclick=()=>markNotificationsRead(false);$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.backTodayBtn').forEach(b=>b.onclick=()=>switchView('home'));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
 $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('lessonModal').classList.remove('open')});$('editModal').addEventListener('click',e=>{if(e.target===$('editModal'))$('editModal').classList.remove('open')});
 (async()=>{
  applyTheme();
