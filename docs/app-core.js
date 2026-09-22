@@ -250,7 +250,30 @@ function wireLessonCards(){
  });
  document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(Number(b.dataset.fav))});
  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();openEdit(Number(b.dataset.edit))});
- document.querySelectorAll('[data-thumb]').forEach(async el=>{const l=lessons.find(x=>Number(x.id)===Number(el.dataset.thumb));const urls=await getImages(l,1);if(urls[0]){const img=document.createElement('img');img.className='thumb';img.src=urls[0];img.loading='lazy';img.referrerPolicy='no-referrer';el.replaceWith(img)}})
+ wireLazyThumbs();
+}
+let azThumbObserver=null;
+function loadThumbElement(el){
+ if(!el||el.dataset.thumbLoading==='1')return;
+ el.dataset.thumbLoading='1';
+ const l=lessons.find(x=>Number(x.id)===Number(el.dataset.thumb));if(!l)return;
+ getImages(l,1).then(urls=>{
+   if(!urls?.[0]||!el.isConnected)return;
+   const img=document.createElement('img');img.className='thumb';img.src=urls[0];img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';el.replaceWith(img);
+ }).catch(()=>{el.dataset.thumbLoading='0'})
+}
+function wireLazyThumbs(){
+ const els=[...document.querySelectorAll('[data-thumb]')];if(!els.length)return;
+ if(!('IntersectionObserver' in window)){els.forEach(loadThumbElement);return}
+ if(azThumbObserver)azThumbObserver.disconnect();
+ azThumbObserver=new IntersectionObserver(entries=>{
+   entries.forEach(entry=>{
+     if(!entry.isIntersecting)return;
+     azThumbObserver.unobserve(entry.target);
+     loadThumbElement(entry.target);
+   });
+ },{rootMargin:'180px 0px'});
+ els.forEach(el=>azThumbObserver.observe(el));
 }
 async function toggleFavorite(id){
  if(favorites.has(id)){const {error}=await sb.from('user_favorites').delete().eq('user_id',session.user.id).eq('lesson_id',id);if(error)return toast(error.message);favorites.delete(id)}
