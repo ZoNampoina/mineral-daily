@@ -110,8 +110,6 @@ async function enterApp(){
  await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
  if(typeof loadArizonaExtras==='function')await loadArizonaExtras();
  if(typeof loadArizonaV20==='function')await loadArizonaV20();
- if(typeof loadArizonaV21==='function')await loadArizonaV21();
- if(typeof loadArizonaV215==='function')await loadArizonaV215();
  await touchActivity();
  await recordLogin();
  renderAll();
@@ -215,7 +213,7 @@ async function loadLessons(){const {data,error}=await sb.from('arizona_lessons')
 async function loadFavorites(){const {data,error}=await sb.from('user_favorites').select('lesson_id').eq('user_id',session.user.id);if(error)throw error;favorites=new Set((data||[]).map(x=>Number(x.lesson_id)))}
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
 
-function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence();if(typeof renderArizonaV21==='function')renderArizonaV21();if(typeof renderArizonaV215==='function')renderArizonaV215()}
+function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence()}
 function applyTheme(){
  const theme=localStorage.getItem('az_theme')||'dark',isLight=theme==='light';
  document.body.classList.toggle('light',isLight);
@@ -252,7 +250,30 @@ function wireLessonCards(){
  });
  document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(Number(b.dataset.fav))});
  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();openEdit(Number(b.dataset.edit))});
- document.querySelectorAll('[data-thumb]').forEach(async el=>{const l=lessons.find(x=>Number(x.id)===Number(el.dataset.thumb));const urls=await getImages(l,1);if(urls[0]){const img=document.createElement('img');img.className='thumb';img.src=urls[0];img.loading='lazy';img.referrerPolicy='no-referrer';el.replaceWith(img)}})
+ wireLazyThumbs();
+}
+let azThumbObserver=null;
+function loadThumbElement(el){
+ if(!el||el.dataset.thumbLoading==='1')return;
+ el.dataset.thumbLoading='1';
+ const l=lessons.find(x=>Number(x.id)===Number(el.dataset.thumb));if(!l)return;
+ getImages(l,1).then(urls=>{
+   if(!urls?.[0]||!el.isConnected)return;
+   const img=document.createElement('img');img.className='thumb';img.src=urls[0];img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';el.replaceWith(img);
+ }).catch(()=>{el.dataset.thumbLoading='0'})
+}
+function wireLazyThumbs(){
+ const els=[...document.querySelectorAll('[data-thumb]')];if(!els.length)return;
+ if(!('IntersectionObserver' in window)){els.forEach(loadThumbElement);return}
+ if(azThumbObserver)azThumbObserver.disconnect();
+ azThumbObserver=new IntersectionObserver(entries=>{
+   entries.forEach(entry=>{
+     if(!entry.isIntersecting)return;
+     azThumbObserver.unobserve(entry.target);
+     loadThumbElement(entry.target);
+   });
+ },{rootMargin:'180px 0px'});
+ els.forEach(el=>azThumbObserver.observe(el));
 }
 async function toggleFavorite(id){
  if(favorites.has(id)){const {error}=await sb.from('user_favorites').delete().eq('user_id',session.user.id).eq('lesson_id',id);if(error)return toast(error.message);favorites.delete(id)}

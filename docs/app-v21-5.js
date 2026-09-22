@@ -1,5 +1,5 @@
 
-let miningProjectsV215=[],projectLessonsV215=[],fieldCampaignsV215=[],fieldSamplesV215=[],assayResultsV215=[];
+let miningProjectsV215=[],projectLessonsV215=[],fieldCampaignsV215=[],fieldSamplesV215=[],assayResultsV215=[],v215Loaded=false,v215Loading=null;
 let activeProjectIdV215=null,activeProjectTabV215='overview';
 
 function v215Text(v){return String(v??'').replace(/\s+/g,' ').trim()}
@@ -22,19 +22,25 @@ function v215AssaysForProject(id){
   return assayResultsV215.filter(a=>sampleIds.has(Number(a.sample_id)));
 }
 
-async function loadArizonaV215(){
+async function loadArizonaV215(force=false){
   if(!session)return;
-  const [p,l,c,s,a]=await Promise.all([
-    sb.from('mining_projects').select('*').order('updated_at',{ascending:false}),
-    sb.from('project_lessons').select('*'),
-    sb.from('field_campaigns').select('*').order('start_date',{ascending:false,nullsFirst:false}).order('id',{ascending:false}),
-    sb.from('field_samples').select('*').order('collected_at',{ascending:false,nullsFirst:false}).order('id',{ascending:false}),
-    sb.from('assay_results').select('*').order('analyzed_at',{ascending:false,nullsFirst:false}).order('id',{ascending:false})
-  ]);
-  if(p.error||l.error||c.error||s.error||a.error)console.warn('ARIZONA V21.5',p.error||l.error||c.error||s.error||a.error);
-  miningProjectsV215=p.data||[];projectLessonsV215=l.data||[];fieldCampaignsV215=c.data||[];fieldSamplesV215=s.data||[];assayResultsV215=a.data||[];
-  if(activeProjectIdV215&&!v215ProjectById(activeProjectIdV215))activeProjectIdV215=null;
-  if(!activeProjectIdV215&&miningProjectsV215[0])activeProjectIdV215=Number(miningProjectsV215[0].id);
+  if(v215Loaded&&!force)return;
+  if(v215Loading&&!force)return v215Loading;
+  v215Loading=(async()=>{
+    const [p,l,c,s,a]=await Promise.all([
+      sb.from('mining_projects').select('*').order('updated_at',{ascending:false}),
+      sb.from('project_lessons').select('*'),
+      sb.from('field_campaigns').select('*').order('start_date',{ascending:false,nullsFirst:false}).order('id',{ascending:false}),
+      sb.from('field_samples').select('*').order('collected_at',{ascending:false,nullsFirst:false}).order('id',{ascending:false}),
+      sb.from('assay_results').select('*').order('analyzed_at',{ascending:false,nullsFirst:false}).order('id',{ascending:false})
+    ]);
+    if(p.error||l.error||c.error||s.error||a.error){console.warn('ARIZONA V21.5',p.error||l.error||c.error||s.error||a.error);return}
+    miningProjectsV215=p.data||[];projectLessonsV215=l.data||[];fieldCampaignsV215=c.data||[];fieldSamplesV215=s.data||[];assayResultsV215=a.data||[];
+    if(activeProjectIdV215&&!v215ProjectById(activeProjectIdV215))activeProjectIdV215=null;
+    if(!activeProjectIdV215&&miningProjectsV215[0])activeProjectIdV215=Number(miningProjectsV215[0].id);
+    v215Loaded=true;
+  })();
+  try{await v215Loading}finally{v215Loading=null}
 }
 
 function renderProjectsV215(){
@@ -178,12 +184,12 @@ async function saveProjectV215(id=null){
   const chosen=[...document.querySelectorAll('.v215LessonPicker input:checked')].map(x=>Number(x.value));
   const {error:delErr}=await sb.from('project_lessons').delete().eq('project_id',projectId);if(delErr)return toast(delErr.message);
   if(chosen.length){const {error}=await sb.from('project_lessons').insert(chosen.map((lessonId,i)=>({project_id:projectId,lesson_id:lessonId,relation_type:i===0?'target':'associated'})));if(error)return toast(error.message)}
-  activeProjectIdV215=Number(projectId);closeV215Modal();await loadArizonaV215();renderProjectsV215();toast(id?'Projet mis à jour.':'Projet créé.');
+  activeProjectIdV215=Number(projectId);closeV215Modal();await loadArizonaV215(true);renderProjectsV215();toast(id?'Projet mis à jour.':'Projet créé.');
 }
 async function deleteProjectV215(id){
   if(!confirm('Supprimer ce projet et toutes ses campagnes, échantillons et analyses ?'))return;
   const {error}=await sb.from('mining_projects').delete().eq('id',id);if(error)return toast(error.message);
-  activeProjectIdV215=null;closeV215Modal();await loadArizonaV215();renderProjectsV215();toast('Projet supprimé.');
+  activeProjectIdV215=null;closeV215Modal();await loadArizonaV215(true);renderProjectsV215();toast('Projet supprimé.');
 }
 
 function openCampaignEditorV215(c=null,projectId=activeProjectIdV215){
@@ -205,12 +211,12 @@ async function saveCampaignV215(id,projectId){
   const name=v215Text($('v215CName').value);if(!name)return toast('Le nom de la campagne est requis.');
   const payload={project_id:Number(projectId),name,campaign_type:$('v215CType').value,start_date:$('v215CStart').value||null,end_date:$('v215CEnd').value||null,team:v215Text($('v215CTeam').value)||null,objective:v215Text($('v215CObjective').value)||null,notes:v215Text($('v215CNotes').value)||null,updated_at:new Date().toISOString()};
   const q=id?sb.from('field_campaigns').update(payload).eq('id',id):sb.from('field_campaigns').insert(payload);
-  const {error}=await q;if(error)return toast(error.message);closeV215Modal();await loadArizonaV215();activeProjectTabV215='campaigns';renderProjectsV215();toast('Campagne enregistrée.');
+  const {error}=await q;if(error)return toast(error.message);closeV215Modal();await loadArizonaV215(true);activeProjectTabV215='campaigns';renderProjectsV215();toast('Campagne enregistrée.');
 }
 async function deleteCampaignV215(id){
   if(!confirm('Supprimer cette campagne ? Les échantillons seront conservés mais détachés de la campagne.'))return;
   const {error}=await sb.from('field_campaigns').delete().eq('id',id);if(error)return toast(error.message);
-  closeV215Modal();await loadArizonaV215();renderProjectsV215();toast('Campagne supprimée.');
+  closeV215Modal();await loadArizonaV215(true);renderProjectsV215();toast('Campagne supprimée.');
 }
 
 function campaignOptionsV215(projectId,selected){
@@ -244,12 +250,12 @@ async function saveSampleV215(id,projectId){
   const n=id=>$(id).value===''?null:Number($(id).value);
   const payload={project_id:Number(projectId),campaign_id:n('v215SCampaign'),sample_code:code,sample_type:$('v215SType').value,sampling_method:v215Text($('v215SMethod').value)||null,latitude:n('v215SLat'),longitude:n('v215SLon'),elevation_m:n('v215SElev'),depth_from_m:n('v215SFrom'),depth_to_m:n('v215STo'),weight_kg:n('v215SWeight'),lithology:v215Text($('v215SLith').value)||null,alteration:v215Text($('v215SAlter').value)||null,mineralization:v215Text($('v215SMineral').value)||null,description:v215Text($('v215SDesc').value)||null,collected_at:$('v215SCollected').value?new Date($('v215SCollected').value).toISOString():null,updated_at:new Date().toISOString()};
   const q=id?sb.from('field_samples').update(payload).eq('id',id):sb.from('field_samples').insert(payload);
-  const {error}=await q;if(error)return toast(error.message);closeV215Modal();await loadArizonaV215();activeProjectTabV215='samples';renderProjectsV215();toast('Échantillon enregistré.');
+  const {error}=await q;if(error)return toast(error.message);closeV215Modal();await loadArizonaV215(true);activeProjectTabV215='samples';renderProjectsV215();toast('Échantillon enregistré.');
 }
 async function deleteSampleV215(id){
   if(!confirm('Supprimer cet échantillon et toutes ses analyses ?'))return;
   const {error}=await sb.from('field_samples').delete().eq('id',id);if(error)return toast(error.message);
-  closeV215Modal();await loadArizonaV215();renderProjectsV215();toast('Échantillon supprimé.');
+  closeV215Modal();await loadArizonaV215(true);renderProjectsV215();toast('Échantillon supprimé.');
 }
 
 function openAssayEditorV215(a=null,sampleId){
@@ -276,13 +282,13 @@ async function saveAssayV215(id,sampleId){
   const n=id=>$(id).value===''?null:Number($(id).value);
   const payload={sample_id:Number(sampleId),analyte,result_value:n('v215AValue'),unit:$('v215AUnit').value,detection_limit:n('v215ALimit'),lab_name:v215Text($('v215ALab').value)||null,method:v215Text($('v215AMethod').value)||null,certificate_ref:v215Text($('v215ACert').value)||null,notes:v215Text($('v215ANotes').value)||null,analyzed_at:$('v215ADate').value||null,updated_at:new Date().toISOString()};
   const q=id?sb.from('assay_results').update(payload).eq('id',id):sb.from('assay_results').insert(payload);
-  const {error}=await q;if(error)return toast(error.message);closeV215Modal();await loadArizonaV215();activeProjectTabV215='assays';renderProjectsV215();toast('Analyse enregistrée.');
+  const {error}=await q;if(error)return toast(error.message);closeV215Modal();await loadArizonaV215(true);activeProjectTabV215='assays';renderProjectsV215();toast('Analyse enregistrée.');
 }
 async function deleteAssayV215(id){
   const {error}=await sb.from('assay_results').delete().eq('id',id);if(error)return toast(error.message);
-  closeV215Modal();await loadArizonaV215();renderProjectsV215();toast('Analyse supprimée.');
+  closeV215Modal();await loadArizonaV215(true);renderProjectsV215();toast('Analyse supprimée.');
 }
-function onArizonaV215ViewChange(view){if(view==='projects')renderProjectsV215()}
+async function onArizonaV215ViewChange(view){if(view!=='projects')return;await loadArizonaV215();renderProjectsV215()}
 function renderArizonaV215(){if(!$('view-projects')?.classList.contains('hidden'))renderProjectsV215()}
 
 if($('v215NewProjectBtn'))$('v215NewProjectBtn').onclick=()=>openProjectEditorV215();

@@ -1,4 +1,4 @@
-let adminNotifications=[];
+let adminNotifications=[],adminMadagascarEntities=[];
 async function importLesson(){
  if(!isAdmin())return toast('Action réservée à l’administrateur.');
  try{
@@ -29,17 +29,19 @@ function newLesson(){
 }
 async function loadAdmin(){
  if(!isAdmin())return;
- const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr},{data:notifs,error:nerr}]=await Promise.all([
+ const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr},{data:notifs,error:nerr},{data:entities,error:eerr}]=await Promise.all([
    sb.from('profiles').select('*').order('created_at',{ascending:true}),
    sb.from('user_activity').select('*'),
-   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(2000),
-   sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100)
+   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(1200),
+   sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100),
+   sb.from('madagascar_entities').select('*').order('updated_at',{ascending:false}).limit(300)
  ]);
- if(uerr||aerr||lerr||nerr){console.warn(uerr||aerr||lerr||nerr);return}
+ if(uerr||aerr||lerr||nerr||eerr){console.warn(uerr||aerr||lerr||nerr||eerr);return}
  const amap=new Map((acts||[]).map(a=>[a.user_id,a.last_seen_at]));
  adminUsers=(users||[]).map(u=>({...u,last_seen_at:amap.get(u.user_id)||null}));
  auditLogs=logs||[];
  adminNotifications=notifs||[];
+ adminMadagascarEntities=entities||[];
  renderAdmin()
 }
 function renderAdmin(){
@@ -48,6 +50,7 @@ function renderAdmin(){
  $('adminImports').textContent=auditLogs.filter(x=>['import','create'].includes(x.action)).length;
  $('adminRecent').textContent=auditLogs.filter(x=>Date.now()-new Date(x.created_at).getTime()<7*864e5).length;
  renderAdminAnalytics();
+ renderAdminEntitiesV216();
 
  $('usersBody').innerHTML=adminUsers.map(u=>{
    const self=u.user_id===session.user.id;
@@ -65,6 +68,24 @@ function renderAdmin(){
  renderLogs()
 }
 
+function renderAdminEntitiesV216(){
+ const summary=$('adminEntitySummary'),list=$('adminEntityList');if(!summary||!list)return;
+ const byOwner=new Map();
+ adminMadagascarEntities.forEach(e=>{const k=e.owner_user_id||'legacy';byOwner.set(k,(byOwner.get(k)||0)+1)});
+ const ownerRows=[...byOwner.entries()].sort((a,b)=>b[1]-a[1]);
+ const top=ownerRows[0];
+ const topUser=top?adminUsers.find(u=>u.user_id===top[0]):null;
+ summary.innerHTML=
+  '<div class="card adminUsageCard"><strong>'+adminMadagascarEntities.length+'</strong><span>entités structurées</span></div>'+
+  '<div class="card adminUsageCard"><strong>'+ownerRows.filter(([k])=>k!=='legacy').length+'</strong><span>utilisateurs contributeurs</span></div>'+
+  '<div class="card adminUsageCard"><strong>'+(top?top[1]:0)+'</strong><span>maximum par utilisateur</span></div>'+
+  '<div class="card adminUsageCard"><strong>'+adminMadagascarEntities.filter(e=>e.status==='operation').length+'</strong><span>en exploitation</span></div>';
+ list.innerHTML=adminMadagascarEntities.length?adminMadagascarEntities.slice(0,30).map(e=>{
+   const u=adminUsers.find(x=>x.user_id===e.owner_user_id);
+   const who=u?.display_name||u?.email||(e.owner_user_id?'Utilisateur':'Ancienne donnée');
+   return '<div class="adminEntityRow"><div><b>'+esc(e.name)+'</b><small>'+esc([(typeof v21TypeLabel==='function'?v21TypeLabel(e.entity_type):e.entity_type),e.region].filter(Boolean).join(' · '))+'</small></div><div><span>'+esc(who)+'</span><small>'+esc(new Date(e.updated_at||e.created_at).toLocaleDateString('fr-FR'))+'</small></div></div>';
+ }).join(''):'<div class="small">Aucune entité structurée utilisateur.</div>';
+}
 function renderAdminAnalytics(){
  const summary=$('adminUsageSummary'),searchBox=$('adminSearchTerms'),lessonBox=$('adminTopLessons'),highlights=$('adminHighlights');
  if(!summary||!searchBox||!lessonBox||!highlights)return;
