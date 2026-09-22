@@ -100,14 +100,14 @@
   </div>
   <div id="admin-logs" class="adminPane hidden">
     <div class="searchRow"><input id="logSearch" class="input" placeholder="Utilisateur / action / fiche…"><select id="logAction" class="select" style="max-width:180px"><option value="">Toutes actions</option><option>create</option><option>update</option><option>delete</option><option>import</option><option>login</option><option>role_change</option></select></div>
-    <div class="tableWrap"><table><thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Objet</th><th>Détails</th></tr></thead><tbody id="logsBody"></tbody></table></div>
+    <div class="tableWrap logTableWrap"><table class="logTable"><thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Objet</th><th>Détails</th></tr></thead><tbody id="logsBody"></tbody></table></div>
   </div>
 </section>
 </main>
 </div></div>
 
 <div id="lessonModal" class="modal"><div class="modalPanel">
-  <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden">Modifier</button><button id="closeLesson" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div></div>
+  <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden editIconBtn" type="button" aria-label="Modifier" title="Modifier">✎</button><button id="closeLesson" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div></div>
   <div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="detailSectionHead"><div class="sectionTitle">Détails techniques</div><div class="detailTools"><button id="expandAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=true})">Tout afficher</button><button id="collapseAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=false})">Tout réduire</button></div></div><div id="modalDetails" class="detailGrid"></div><div class="sectionTitle">Quiz</div><div id="modalQuiz"></div>
 </div></div>
 
