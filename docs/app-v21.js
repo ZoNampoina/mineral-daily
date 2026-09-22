@@ -214,13 +214,32 @@ function v21GraphTarget(r){
   }
   return {label:r.target_label||'Relation',kind:r.target_kind,id:null};
 }
-function renderKnowledgePickerV21(){
+let knowledgeHydrationSeqV218=0;
+async function hydrateKnowledgeSelectionV218(){
+  const sel=$('knowledgeLessonSelect'),svg=$('knowledgeGraphSvg'),list=$('knowledgeRelationList');if(!sel)return;
+  const id=Number(sel.value||0);if(!id)return;
+  const seq=++knowledgeHydrationSeqV218;
+  if(svg)svg.innerHTML='';
+  if(list)list.innerHTML='<div class="small">Chargement des relations du minerai…</div>';
+  try{
+    if(typeof requestLessonDataV218==='function'){
+      await requestLessonDataV218(id,{title:'Chargement du minerai…',subtitle:'Préparation des relations du Knowledge Graph.'});
+    }else if(typeof ensureLessonDetail==='function')await ensureLessonDetail(id);
+    if(seq!==knowledgeHydrationSeqV218||Number(sel.value)!==id)return;
+    renderKnowledgeGraphV21();
+  }catch(e){
+    console.error(e);
+    if(seq===knowledgeHydrationSeqV218&&list)list.innerHTML='<div class="small">Chargement impossible : '+esc(e.message||'Erreur')+'</div>';
+  }
+}
+async function renderKnowledgePickerV21(){
   const sel=$('knowledgeLessonSelect');if(!sel)return;
   const cur=sel.value;
   sel.innerHTML=lessons.map(l=>'<option value="'+l.id+'">'+esc(l.name)+' · '+esc(compactSymbol(l))+'</option>').join('');
   if(cur&&lessons.some(l=>String(l.id)===String(cur)))sel.value=cur;
   else if(activeLesson)sel.value=String(activeLesson.id);
-  renderKnowledgeGraphV21();
+  else if(lessons[0])sel.value=String(lessons[0].id);
+  await hydrateKnowledgeSelectionV218();
 }
 function renderKnowledgeGraphV21(){
   const sel=$('knowledgeLessonSelect'),svg=$('knowledgeGraphSvg'),list=$('knowledgeRelationList');if(!sel||!svg||!list)return;
@@ -301,7 +320,7 @@ async function onArizonaV21ViewChange(view){
   if(view!=='madagascar'&&view!=='knowledge')return;
   await loadArizonaV21();
   if(view==='madagascar')renderMadagascarV21();
-  if(view==='knowledge')renderKnowledgePickerV21();
+  if(view==='knowledge')await renderKnowledgePickerV21();
 }
 function renderArizonaV21(){
   if(!$('view-madagascar')?.classList.contains('hidden'))renderMadagascarV21();
@@ -312,7 +331,7 @@ if($('v21MgTypeFilter'))$('v21MgTypeFilter').onchange=renderMadagascarV21;
 if($('v21MgRegionFilter'))$('v21MgRegionFilter').onchange=renderMadagascarV21;
 if($('v21MgSaveBtn'))$('v21MgSaveBtn').onclick=saveMadagascarEntityV21;
 if($('v21MgResetBtn'))$('v21MgResetBtn').onclick=()=>populateMadagascarFormV21();
-if($('knowledgeLessonSelect'))$('knowledgeLessonSelect').onchange=renderKnowledgeGraphV21;
+if($('knowledgeLessonSelect'))$('knowledgeLessonSelect').onchange=hydrateKnowledgeSelectionV218;
 if($('v21RelationTargetKind'))$('v21RelationTargetKind').onchange=updateRelationTargetControlsV21;
 if($('v21AddRelationBtn'))$('v21AddRelationBtn').onclick=addKnowledgeRelationV21;
 if($('v21CloseEntityModal'))$('v21CloseEntityModal').onclick=()=>$('v21MgEntityModal').classList.remove('open');
