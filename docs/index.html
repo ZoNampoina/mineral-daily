@@ -144,7 +144,10 @@
   <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
   <div class="card cardPad engineerToolbar">
     <div><div class="eyebrow">Mode Ingénieur</div><h2>Dossier technique structuré</h2><div class="small">Géologie → Exploration → Exploitation → Traitement → Économie → Madagascar.</div></div>
-    <select id="engineerLessonSelect" class="select"></select>
+    <div class="engineerToolbarControls">
+      <select id="engineerLessonSelect" class="select"></select>
+      <div class="detailTools engineerDetailTools"><button id="engineerExpandAll" type="button" class="btn detailToolBtn">Tout afficher</button><button id="engineerCollapseAll" type="button" class="btn detailToolBtn">Tout réduire</button></div>
+    </div>
   </div>
   <div id="engineerWorkspace"></div>
 </section>
@@ -166,8 +169,8 @@
   <div class="sectionTitle">Entités structurées</div>
   <div id="madagascarStructuredList" class="v21MgGrid"></div>
 
-  <div id="v21MgAdmin" class="card cardPad v21AdminPanel adminOnly hidden">
-    <div class="v21EditorHead"><div><div class="eyebrow">Administration</div><h3>Ajouter / modifier une entité Madagascar</h3></div><button id="v21MgResetBtn" class="btn" type="button">Nouveau</button></div>
+  <div id="v21MgAdmin" class="card cardPad v21AdminPanel">
+    <div class="v21EditorHead"><div><div class="eyebrow">Mes données</div><h3>Ajouter / modifier une entité Madagascar</h3><div class="small">Chaque entité est privée à ton compte. L’administrateur peut la superviser.</div></div><button id="v21MgResetBtn" class="btn" type="button">Nouveau</button></div>
     <input id="v21MgId" type="hidden">
     <div class="grid2">
       <div><div class="small">Nom</div><input id="v21MgName" class="input" placeholder="Nom du projet, gisement ou occurrence"></div>
@@ -276,7 +279,7 @@
   </div>
   <div class="aboutGrid">
     <div class="card cardPad"><div class="eyebrow">Fondateur</div><h3>RAZAFINDRAKOTO Arijaona Zo Nampoina</h3><div class="small">Conception et développement du projet ARIZONA.</div></div>
-    <div class="card cardPad"><div class="eyebrow">Version actuelle</div><div class="aboutVersion">V21.5</div><div class="small">Mode Projet · campagnes terrain · échantillons · analyses · Knowledge Graph amélioré.</div></div>
+    <div class="card cardPad"><div class="eyebrow">Version actuelle</div><div class="aboutVersion">V21.6</div><div class="small">Performances optimisées · entités privées par utilisateur · Mode Ingénieur enrichi.</div></div>
   </div>
   <div class="card cardPad aboutCapabilities">
     <div class="eyebrow">Mission</div>
@@ -300,6 +303,11 @@
       <div class="card cardPad"><div class="eyebrow">Consultations</div><h3>Minerais les plus consultés</h3><div id="adminTopLessons" class="adminRankList"></div></div>
     </div>
     <div class="card cardPad" style="margin-top:12px"><div class="eyebrow">Tendance récente</div><h3>Activités marquantes</h3><div id="adminHighlights" class="adminHighlights"></div></div>
+    <div class="card cardPad adminEntityPanel" style="margin-top:12px">
+      <div class="eyebrow">Madagascar structuré</div>
+      <div class="adminEntityHead"><div><h3>Entités des utilisateurs</h3><div class="small">Supervision des entités Madagascar créées dans les comptes.</div></div><strong id="adminEntityCount">0</strong></div>
+      <div id="adminStructuredEntities" class="adminStructuredEntities"><div class="small">Chargement à l’ouverture de l’administration.</div></div>
+    </div>
   </div>
   <div id="admin-users" class="adminPane hidden">
     <div class="card cardPad"><div class="small">Le gestionnaire affiche le nom utilisateur, les informations de profil renseignées, l’e-mail et un UUID abrégé. Les mots de passe, hashes, tokens et clés secrètes ne sont jamais accessibles.</div></div>
