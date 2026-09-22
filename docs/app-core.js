@@ -139,6 +139,11 @@ function renderDetails(l){
  }
  $('modalDetails').innerHTML=html
 }
+function setAllTechnicalDetails(open){
+ document.querySelectorAll('#modalDetails details.detailCard').forEach(card=>{card.open=open});
+}
+if($('expandAllDetails')) $('expandAllDetails').onclick=()=>setAllTechnicalDetails(true);
+if($('collapseAllDetails')) $('collapseAllDetails').onclick=()=>setAllTechnicalDetails(false);
 function renderQuiz(l){
  const qs=parseQuiz(l.raw_text);if(!qs.length){$('modalQuiz').innerHTML='<div class="card cardPad small">Quiz non disponible.</div>';return}
  const prev=progress.get(Number(l.id));$('modalQuiz').innerHTML='<div class="card cardPad">'+qs.map((q,i)=>'<div class="quizQ"><b>Q'+(i+1)+'. '+esc(q.question)+'</b><div class="quizOpts">'+Object.entries(q.options).map(([k,v])=>'<label class="quizOpt"><input type="radio" name="q'+i+'" value="'+k+'"> <span><b>'+k+')</b> '+esc(v)+'</span></label>').join('')+'</div><div class="small quizFeedback" id="fb'+i+'"></div></div>').join('')+'<button id="submitQuiz" class="btn primary">Valider le quiz</button>'+(prev?'<span class="small" style="margin-left:8px">Meilleur score : '+prev.score+'/3</span>':'')+'</div>';
