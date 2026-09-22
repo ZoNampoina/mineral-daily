@@ -52,7 +52,7 @@ function renderLogs(){
  $('logsBody').innerHTML=rows.map(l=>'<tr><td>'+esc(new Date(l.created_at).toLocaleString('fr-FR'))+'</td><td>'+esc(l.actor_email||'Système')+'</td><td><span class="roleBadge">'+esc(l.action)+'</span></td><td>'+esc(l.entity_type)+' '+esc(l.entity_id||'')+'</td><td>'+esc(JSON.stringify(l.metadata||{}))+'</td></tr>').join('')
 }
 function switchView(v){
- document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));$('view-'+v).classList.remove('hidden');document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));if(v==='admin'&&isAdmin())loadAdmin()
+ document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));$('view-'+v).classList.remove('hidden');document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));if(v==='admin'&&isAdmin())loadAdmin();if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
 function switchAdmin(sub){document.querySelectorAll('.adminPane').forEach(e=>e.classList.add('hidden'));$('admin-'+sub).classList.remove('hidden');document.querySelectorAll('.adminSub').forEach(e=>e.classList.toggle('active',e.dataset.sub===sub))}
 $('loginBtn').onclick=signIn;$('signupBtn').onclick=signUp;$('logoutBtn').onclick=logout;
@@ -103,3 +103,20 @@ if($('quickImportBtn')) $('quickImportBtn').onclick=()=>{
 setInterval(()=>{ if(session) refreshArizona(false); }, 60000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden && session) refreshArizona(false); });
 window.addEventListener('focus',()=>{ if(session) refreshArizona(false); });
+
+
+// --- Menu latéral compact ARIZONA ---
+function setMenuOpen(open){
+  const panel=$('appMenu'),backdrop=$('menuBackdrop'),btn=$('menuBtn');
+  if(!panel||!backdrop||!btn) return;
+  panel.classList.toggle('open',open);
+  backdrop.classList.toggle('open',open);
+  panel.setAttribute('aria-hidden',String(!open));
+  backdrop.setAttribute('aria-hidden',String(!open));
+  btn.setAttribute('aria-expanded',String(open));
+  document.body.classList.toggle('menuOpen',open);
+}
+if($('menuBtn')) $('menuBtn').onclick=()=>setMenuOpen(true);
+if($('closeMenuBtn')) $('closeMenuBtn').onclick=()=>setMenuOpen(false);
+if($('menuBackdrop')) $('menuBackdrop').onclick=()=>setMenuOpen(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenuOpen(false)});
