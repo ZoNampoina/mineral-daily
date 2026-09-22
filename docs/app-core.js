@@ -7,7 +7,15 @@ const HEADINGS=['NOM DU MINÉRAL','RÉSUMÉ EXÉCUTIF','CARACTÉRISTIQUES CHIMIQ
 const SECTION_LABELS={
  'CARACTÉRISTIQUES CHIMIQUES':'Caractéristiques chimiques','CARACTÉRISTIQUES PHYSIQUES':'Caractéristiques physiques','GÉOLOGIE ET GENÈSE':'Géologie et genèse','ZONES MONDIALES':'Zones mondiales','MADAGASCAR':'Madagascar','EXPLOITATION':'Exploitation','TRAITEMENT / MINÉRALURGIE':'Traitement / minéralurgie','USAGES':'Usages','MARCHÉ INTERNATIONAL':'Marché international','CONVERSION ARIARY':'Conversion ariary','PRODUCTION ANNUELLE':'Production annuelle','ÉCONOMIE':'Économie','ENVIRONNEMENT':'Environnement','GÉOPOLITIQUE':'Géopolitique','À RETENIR':'À retenir','VOCABULAIRE':'Vocabulaire','CAS CONCRET':'Cas concret','MINI-CAS PRATIQUE':'Mini-cas pratique','ERREUR FRÉQUENTE':'Erreur fréquente'
 };
-const IMG_QUERY={'Or':'native gold mineral specimen','Cobalt':'cobaltite mineral specimen','Nickel':'pentlandite mineral specimen','Étain':'cassiterite mineral specimen','Etain':'cassiterite mineral specimen','Graphite':'graphite mineral specimen'};
+const IMG_QUERIES={
+ 'Or':['native gold mineral specimen','gold nugget mineral','gold ring jewelry'],
+ 'Cobalt':['cobaltite mineral specimen','cobalt ore mineral','lithium ion battery cobalt'],
+ 'Nickel':['pentlandite mineral specimen','nickel ore mineral specimen','stainless steel nickel product'],
+ 'Étain':['cassiterite mineral specimen','tin ore cassiterite','tin solder product'],
+ 'Etain':['cassiterite mineral specimen','tin ore cassiterite','tin solder product'],
+ 'Graphite':['graphite mineral specimen','natural graphite ore','graphite pencil product','lithium ion battery graphite anode'],
+ 'Cuivre':['native copper mineral specimen','chalcopyrite copper ore','copper electrical wire','copper plumbing product']
+};
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),3200)}
@@ -37,18 +45,39 @@ function parseQuiz(raw){
    return {question:qm?.[1]?.trim()||'',options,answer,explanation};
  }).filter(x=>x.question&&x.answer);
 }
-async function imageSearch(name,limit=4){
- const cacheKey='az_img_'+name.toLowerCase();
- try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached?.length)return cached.slice(0,limit)}catch{}
- const q=encodeURIComponent(IMG_QUERY[name]||(name+' mineral specimen'));
+async function commonsSearch(query,limit=3){
  try{
-   const u='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+q+'&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url&iiurlwidth=1000&format=json&origin=*';
-   const r=await fetch(u);const j=await r.json();const arr=Object.values(j.query?.pages||{}).map(p=>p.imageinfo?.[0]?.thumburl||p.imageinfo?.[0]?.url).filter(Boolean).slice(0,limit);
-   if(arr.length)localStorage.setItem(cacheKey,JSON.stringify(arr));return arr
+   const q=encodeURIComponent(query);
+   const u='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+q+'&gsrnamespace=6&gsrlimit='+Math.max(6,limit*2)+'&prop=imageinfo&iiprop=url&iiurlwidth=1000&format=json&origin=*';
+   const r=await fetch(u);const j=await r.json();
+   return Object.values(j.query?.pages||{}).map(p=>p.imageinfo?.[0]?.thumburl||p.imageinfo?.[0]?.url).filter(Boolean).slice(0,limit);
  }catch(e){return[]}
 }
-async function getImages(l,limit=4){if(Array.isArray(l.image_urls)&&l.image_urls.length)return l.image_urls.slice(0,limit);return imageSearch(l.name,limit)}
-async function fillGallery(id,l){const box=$(id);box.innerHTML='<div class="small">Chargement des images réelles…</div>';const urls=await getImages(l,4);box.innerHTML=urls.length?urls.map(u=>'<img src="'+esc(u)+'" loading="lazy" referrerpolicy="no-referrer" alt="'+esc(l.name)+'">').join(''):'<div class="card cardPad small">Aucune image disponible pour le moment.</div>'}
+async function imageSearch(name,limit=6){
+ const cacheKey='az_img_v3_'+name.toLowerCase();
+ try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached?.length>=Math.min(4,limit))return cached.slice(0,limit)}catch{}
+ const queries=IMG_QUERIES[name]||[name+' mineral specimen',name+' ore',name+' industrial product'];
+ const collected=[];
+ for(const q of queries){
+   const arr=await commonsSearch(q,2);
+   for(const url of arr) if(url&&!collected.includes(url)) collected.push(url);
+   if(collected.length>=limit)break;
+ }
+ const out=collected.slice(0,limit);
+ if(out.length)localStorage.setItem(cacheKey,JSON.stringify(out));
+ return out
+}
+async function getImages(l,limit=6){
+ const saved=Array.isArray(l.image_urls)?l.image_urls.filter(Boolean):[];
+ if(saved.length>=limit)return saved.slice(0,limit);
+ const auto=await imageSearch(l.name,limit);
+ return [...new Set([...saved,...auto])].slice(0,limit)
+}
+async function fillGallery(id,l){
+ const box=$(id);box.innerHTML='<div class="small">Chargement des images réelles…</div>';
+ const urls=await getImages(l,6);
+ box.innerHTML=urls.length?urls.map((u,i)=>'<img src="'+esc(u)+'" loading="lazy" referrerpolicy="no-referrer" alt="'+esc(l.name)+(i>1?' — usage ou produit fini':' — spécimen minéral')+'">').join(''):'<div class="card cardPad small">Aucune image disponible pour le moment.</div>'
+}
 async function thumbFor(img,l){const urls=await getImages(l,1);if(urls[0]){img.src=urls[0];img.classList.remove('thumbFallback');img.textContent=''}}
 
 async function signUp(){
@@ -112,7 +141,7 @@ function renderHome(){
 }
 function lessonCard(l,admin=false){
  const fav=favorites.has(Number(l.id));
- return '<div class="card lessonCard" data-card-id="'+l.id+'"><div class="thumb thumbFallback" data-thumb="'+l.id+'">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+' <span class="roleBadge">'+esc(compactSymbol(l))+'</span></div><div class="lessonDesc">'+esc(formatDate(l.lesson_date))+'</div><div class="lessonSummary">'+esc(section(l.raw_text,'RÉSUMÉ EXÉCUTIF'))+'</div></div><div class="lessonActions"><button class="btn favToggle" data-fav="'+l.id+'" title="Favori">'+(fav?'★':'☆')+'</button><button class="btn openLesson" data-open="'+l.id+'">Ouvrir</button>'+(admin?'<button class="btn editLesson" data-edit="'+l.id+'">Modifier</button>':'')+'</div></div>'
+ return '<div class="card lessonCard lessonCardClickable" data-open-card="'+l.id+'" tabindex="0" role="button" aria-label="Ouvrir la fiche '+esc(l.name)+'"><div class="thumb thumbFallback" data-thumb="'+l.id+'">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+' <span class="roleBadge">'+esc(compactSymbol(l))+'</span></div><div class="lessonDesc">'+esc(formatDate(l.lesson_date))+'</div><div class="lessonSummary">'+esc(section(l.raw_text,'RÉSUMÉ EXÉCUTIF'))+'</div></div><div class="lessonActions"><button class="btn favToggle" data-fav="'+l.id+'" title="Favori" aria-label="Favori">'+(fav?'★':'☆')+'</button>'+(admin?'<button class="btn editLesson" data-edit="'+l.id+'">Modifier</button>':'')+'</div></div>'
 }
 function renderLessonLists(){
  const q=$('historySearch').value.trim().toLowerCase();const filtered=lessons.filter(l=>!q||l.name.toLowerCase().includes(q)||l.raw_text.toLowerCase().includes(q));
@@ -123,8 +152,12 @@ function renderLessonLists(){
 }
 function wireLessonCards(){
  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openLesson(Number(b.dataset.open)));
- document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>toggleFavorite(Number(b.dataset.fav)));
- document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(Number(b.dataset.edit)));
+ document.querySelectorAll('[data-open-card]').forEach(card=>{
+   card.onclick=e=>{if(e.target.closest('button,input,select,a'))return;openLesson(Number(card.dataset.openCard))};
+   card.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button,input,select,a')){e.preventDefault();openLesson(Number(card.dataset.openCard))}}
+ });
+ document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(Number(b.dataset.fav))});
+ document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();openEdit(Number(b.dataset.edit))});
  document.querySelectorAll('[data-thumb]').forEach(async el=>{const l=lessons.find(x=>Number(x.id)===Number(el.dataset.thumb));const urls=await getImages(l,1);if(urls[0]){const img=document.createElement('img');img.className='thumb';img.src=urls[0];img.loading='lazy';img.referrerPolicy='no-referrer';el.replaceWith(img)}})
 }
 async function toggleFavorite(id){
