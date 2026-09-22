@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ARIZONA">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2cf72"/><stop offset=".5" stop-color="#c89a39"/><stop offset="1" stop-color="#9c6d1d"/></linearGradient></defs>
+<rect width="512" height="512" rx="96" fill="#0b0f14"/>
+<path d="M72 414 249 94l47 82-28 49-19-34-122 223H72Zm251-139 117 139h-63l-81-96 27-43Z" fill="url(#g)"/>
+<path d="M299 120c20 9 28 30 28 52 0 20 14 31 11 50-3 16-17 25-15 42 3 23-11 38-18 56-9 25-3 46-21 64-18 17-46 17-67 6-21-10-28-31-27-53 1-20-15-31-12-51 3-21 22-31 22-53 0-17 9-31 23-40 16-10 25-28 40-42 11-10 21-38 36-31Z" fill="#202426"/>
+<path d="m180 327 123-117 18 18-122 116-19-17Zm82-131c50 7 92 40 116 84-32-31-72-52-116-58v-26Z" fill="url(#g)"/>
+</svg>
