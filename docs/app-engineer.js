@@ -64,3 +64,9 @@ function onEngineerViewChange(view){
   if(view==='engineer')renderEngineerPicker();
 }
 if($('engineerLessonSelect'))$('engineerLessonSelect').onchange=renderEngineerWorkspace;
+
+function setEngineerDetailsV21_6(open){
+  document.querySelectorAll('#engineerWorkspace details.engineerCard').forEach(d=>{d.open=open});
+}
+if($('engineerExpandAll'))$('engineerExpandAll').onclick=()=>setEngineerDetailsV21_6(true);
+if($('engineerCollapseAll'))$('engineerCollapseAll').onclick=()=>setEngineerDetailsV21_6(false);
