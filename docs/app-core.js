@@ -45,21 +45,23 @@ function parseQuiz(raw){
    return {question:qm?.[1]?.trim()||'',options,answer,explanation};
  }).filter(x=>x.question&&x.answer);
 }
-async function commonsSearch(query,limit=3){
+async function commonsSearch(query,limit=3,offset=0){
  try{
    const q=encodeURIComponent(query);
-   const u='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+q+'&gsrnamespace=6&gsrlimit='+Math.max(6,limit*2)+'&prop=imageinfo&iiprop=url&iiurlwidth=1000&format=json&origin=*';
+   const u='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+q+'&gsrnamespace=6&gsrlimit='+Math.max(6,limit*2)+'&gsroffset='+Math.max(0,offset)+'&prop=imageinfo&iiprop=url&iiurlwidth=1000&format=json&origin=*';
    const r=await fetch(u);const j=await r.json();
    return Object.values(j.query?.pages||{}).map(p=>p.imageinfo?.[0]?.thumburl||p.imageinfo?.[0]?.url).filter(Boolean).slice(0,limit);
  }catch(e){return[]}
 }
-async function imageSearch(name,limit=6){
- const cacheKey='az_img_v3_'+name.toLowerCase();
- try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached?.length>=Math.min(4,limit))return cached.slice(0,limit)}catch{}
+async function imageSearch(name,limit=6,force=false){
+ const base=name.toLowerCase(),cacheKey='az_img_v3_'+base,roundKey='az_img_round_'+base;
+ if(!force){try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');if(cached?.length>=Math.min(4,limit))return cached.slice(0,limit)}catch{}}
+ let round=Number(localStorage.getItem(roundKey)||0);
+ if(force){round=(round+1)%6;localStorage.setItem(roundKey,String(round));localStorage.removeItem(cacheKey)}
  const queries=IMG_QUERIES[name]||[name+' mineral specimen',name+' ore',name+' industrial product'];
  const collected=[];
  for(const q of queries){
-   const arr=await commonsSearch(q,2);
+   const arr=await commonsSearch(q,2,round*2);
    for(const url of arr) if(url&&!collected.includes(url)) collected.push(url);
    if(collected.length>=limit)break;
  }
@@ -67,16 +69,24 @@ async function imageSearch(name,limit=6){
  if(out.length)localStorage.setItem(cacheKey,JSON.stringify(out));
  return out
 }
-async function getImages(l,limit=6){
+async function getImages(l,limit=6,force=false){
  const saved=Array.isArray(l.image_urls)?l.image_urls.filter(Boolean):[];
- if(saved.length>=limit)return saved.slice(0,limit);
- const auto=await imageSearch(l.name,limit);
+ if(saved.length>=limit&&!force)return saved.slice(0,limit);
+ const auto=await imageSearch(l.name,limit,force);
  return [...new Set([...saved,...auto])].slice(0,limit)
 }
-async function fillGallery(id,l){
- const box=$(id);box.innerHTML='<div class="small">Chargement des images réelles…</div>';
- const urls=await getImages(l,6);
+async function fillGallery(id,l,force=false){
+ const box=$(id);if(!box||!l)return;
+ box.innerHTML='<div class="small">Chargement des images réelles…</div>';
+ const urls=await getImages(l,6,force);
  box.innerHTML=urls.length?urls.map((u,i)=>'<img src="'+esc(u)+'" loading="lazy" referrerpolicy="no-referrer" alt="'+esc(l.name)+(i>1?' — usage ou produit fini':' — spécimen minéral')+'">').join(''):'<div class="card cardPad small">Aucune image disponible pour le moment.</div>'
+}
+async function refreshLessonImages(l,targetId,buttonId){
+ if(!l)return;
+ const btn=$(buttonId);if(btn){btn.disabled=true;btn.classList.add('isRefreshing')}
+ await fillGallery(targetId,l,true);
+ if(btn){btn.disabled=false;btn.classList.remove('isRefreshing')}
+ toast('Images rafraîchies.')
 }
 async function thumbFor(img,l){const urls=await getImages(l,1);if(urls[0]){img.src=urls[0];img.classList.remove('thumbFallback');img.textContent=''}}
 
@@ -124,9 +134,26 @@ async function loadProfile(){
  if(!profile)throw new Error('Profil utilisateur non initialisé.');
  $('roleBadge').textContent=profile.role==='admin'?'Administrateur':'Standard';
  document.querySelectorAll('.adminOnly').forEach(e=>e.classList.toggle('hidden',!isAdmin()));
+ const editBtn=$('editLessonBtn');if(editBtn&&!isAdmin())editBtn.remove();
 }
 async function touchActivity(){await sb.from('user_activity').upsert({user_id:session.user.id,last_seen_at:new Date().toISOString()},{onConflict:'user_id'})}
 async function recordLogin(){await sb.from('audit_logs').insert({actor_user_id:session.user.id,action:'login',entity_type:'session',entity_id:session.user.id,metadata:{user_agent:navigator.userAgent.slice(0,180)}})}
+const usageLast=new Map(),searchAuditTimers={};
+async function recordUsageEvent(action,entityType,entityId,metadata={}){
+ if(!session)return;
+ const key=action+'|'+entityType+'|'+String(entityId??'')+'|'+JSON.stringify(metadata||{});
+ const now=Date.now(),last=usageLast.get(key)||0;
+ if(now-last<30000)return;
+ usageLast.set(key,now);
+ const {error}=await sb.from('audit_logs').insert({actor_user_id:session.user.id,action,entity_type:entityType,entity_id:String(entityId??''),metadata});
+ if(error)console.warn('Usage event',error);
+}
+function scheduleSearchAudit(query,surface='search',scope='all'){
+ const q=String(query||'').trim();
+ clearTimeout(searchAuditTimers[surface]);
+ if(q.length<2)return;
+ searchAuditTimers[surface]=setTimeout(()=>recordUsageEvent('search','search',surface,{query:q.slice(0,120),surface,scope}),750);
+}
 async function loadLessons(){const {data,error}=await sb.from('arizona_lessons').select('*').order('lesson_date',{ascending:false}).order('id',{ascending:false});if(error)throw error;lessons=data||[]}
 async function loadFavorites(){const {data,error}=await sb.from('user_favorites').select('lesson_id').eq('user_id',session.user.id);if(error)throw error;favorites=new Set((data||[]).map(x=>Number(x.lesson_id)))}
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
@@ -167,7 +194,7 @@ async function toggleFavorite(id){
  renderAll();if(activeLesson?.id===id)$('modalFav').textContent=favorites.has(id)?'★':'☆'
 }
 async function openLesson(id){
- const l=lessons.find(x=>Number(x.id)===Number(id));if(!l)return;activeLesson=l;if(typeof azTrackRecentlyViewed==='function')azTrackRecentlyViewed(id);$('lessonModal').classList.add('open');
+ const l=lessons.find(x=>Number(x.id)===Number(id));if(!l)return;activeLesson=l;if(typeof azTrackRecentlyViewed==='function')azTrackRecentlyViewed(id);recordUsageEvent('view_lesson','lesson',l.id,{lesson_name:l.name,symbol:compactSymbol(l)});$('lessonModal').classList.add('open');
  $('modalName').textContent=l.name+' · '+compactSymbol(l);$('modalDate').textContent=formatDate(l.lesson_date);$('modalFav').textContent=favorites.has(Number(l.id))?'★':'☆';
  $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');await fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l);if(typeof renderLessonExtras==='function')renderLessonExtras(l);if(typeof renderLessonIntelligence==='function')renderLessonIntelligence(l)
 }
@@ -187,6 +214,8 @@ function setAllTechnicalDetails(open){
 }
 if($('expandAllDetails')) $('expandAllDetails').onclick=()=>setAllTechnicalDetails(true);
 if($('collapseAllDetails')) $('collapseAllDetails').onclick=()=>setAllTechnicalDetails(false);
+if($('refreshHomeImages'))$('refreshHomeImages').onclick=()=>lessons[0]&&refreshLessonImages(lessons[0],'homeGallery','refreshHomeImages');
+if($('refreshModalImages'))$('refreshModalImages').onclick=()=>activeLesson&&refreshLessonImages(activeLesson,'modalGallery','refreshModalImages');
 function renderQuiz(l){
  const qs=parseQuiz(l.raw_text);if(!qs.length){$('modalQuiz').innerHTML='<div class="card cardPad small">Quiz non disponible.</div>';return}
  const prev=progress.get(Number(l.id));$('modalQuiz').innerHTML='<div class="card cardPad">'+qs.map((q,i)=>'<div class="quizQ"><b>Q'+(i+1)+'. '+esc(q.question)+'</b><div class="quizOpts">'+Object.entries(q.options).map(([k,v])=>'<label class="quizOpt"><input type="radio" name="q'+i+'" value="'+k+'"> <span><b>'+k+')</b> '+esc(v)+'</span></label>').join('')+'</div><div class="small quizFeedback" id="fb'+i+'"></div></div>').join('')+'<button id="submitQuiz" class="btn primary">Valider le quiz</button>'+(prev?'<span class="small" style="margin-left:8px">Meilleur score : '+prev.score+'/3</span>':'')+'</div>';

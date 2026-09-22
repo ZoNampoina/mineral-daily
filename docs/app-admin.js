@@ -31,7 +31,7 @@ async function loadAdmin(){
  const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr},{data:notifs,error:nerr}]=await Promise.all([
    sb.from('profiles').select('*').order('created_at',{ascending:true}),
    sb.from('user_activity').select('*'),
-   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(500),
+   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(2000),
    sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100)
  ]);
  if(uerr||aerr||lerr||nerr){console.warn(uerr||aerr||lerr||nerr);return}
@@ -46,6 +46,7 @@ function renderAdmin(){
  $('adminLessons').textContent=lessons.length;
  $('adminImports').textContent=auditLogs.filter(x=>['import','create'].includes(x.action)).length;
  $('adminRecent').textContent=auditLogs.filter(x=>Date.now()-new Date(x.created_at).getTime()<7*864e5).length;
+ renderAdminAnalytics();
 
  $('usersBody').innerHTML=adminUsers.map(u=>{
    const self=u.user_id===session.user.id;
@@ -57,6 +58,51 @@ function renderAdmin(){
  renderNotifications();
  renderLogs()
 }
+
+function renderAdminAnalytics(){
+ const summary=$('adminUsageSummary'),searchBox=$('adminSearchTerms'),lessonBox=$('adminTopLessons'),highlights=$('adminHighlights');
+ if(!summary||!searchBox||!lessonBox||!highlights)return;
+ const now=Date.now(),d7=7*864e5,d30=30*864e5;
+ const recent7=auditLogs.filter(x=>now-new Date(x.created_at).getTime()<=d7);
+ const recent30=auditLogs.filter(x=>now-new Date(x.created_at).getTime()<=d30);
+ const searches=recent30.filter(x=>x.action==='search'&&String(x.metadata?.query||'').trim().length>=2);
+ const views=recent30.filter(x=>x.action==='view_lesson');
+ const activeUsers=new Set(recent7.map(x=>x.actor_user_id).filter(Boolean));
+ const uniqueViewed=new Set(views.map(x=>String(x.entity_id||x.metadata?.lesson_name||'')).filter(Boolean));
+
+ summary.innerHTML=
+  '<div class="card adminUsageCard"><strong>'+recent7.filter(x=>x.action==='search').length+'</strong><span>recherches · 7 j</span></div>'+
+  '<div class="card adminUsageCard"><strong>'+recent7.filter(x=>x.action==='view_lesson').length+'</strong><span>consultations · 7 j</span></div>'+
+  '<div class="card adminUsageCard"><strong>'+activeUsers.size+'</strong><span>utilisateurs actifs · 7 j</span></div>'+
+  '<div class="card adminUsageCard"><strong>'+uniqueViewed.size+'</strong><span>fiches distinctes vues · 30 j</span></div>';
+
+ const normalize=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const counts=(items,keyFn)=>{
+   const m=new Map();
+   for(const item of items){
+     const raw=keyFn(item),key=normalize(raw);
+     if(!key)continue;
+     const prev=m.get(key)||{label:String(raw).trim(),count:0};
+     prev.count++;m.set(key,prev);
+   }
+   return [...m.values()].sort((a,b)=>b.count-a.count||a.label.localeCompare(b.label,'fr')).slice(0,10);
+ };
+ const topSearch=counts(searches,x=>x.metadata?.query||'');
+ const topViews=counts(views,x=>x.metadata?.lesson_name||lessons.find(l=>String(l.id)===String(x.entity_id))?.name||('Fiche '+x.entity_id));
+
+ const rankHtml=arr=>arr.length?arr.map((x,i)=>'<div class="adminRankItem"><span class="adminRankPos">'+(i+1)+'</span><span class="adminRankLabel">'+esc(x.label)+'</span><strong>'+x.count+'</strong></div>').join(''):'<div class="small">Pas encore assez de données.</div>';
+ searchBox.innerHTML=rankHtml(topSearch);
+ lessonBox.innerHTML=rankHtml(topViews);
+
+ const lastSearch=searches[0],lastView=views[0],topS=topSearch[0],topV=topViews[0];
+ const rows=[];
+ if(topS)rows.push('<div><b>Recherche dominante</b><span>« '+esc(topS.label)+' » · '+topS.count+' recherche'+(topS.count>1?'s':'')+' sur 30 jours</span></div>');
+ if(topV)rows.push('<div><b>Fiche la plus consultée</b><span>'+esc(topV.label)+' · '+topV.count+' consultation'+(topV.count>1?'s':'')+' sur 30 jours</span></div>');
+ if(lastSearch)rows.push('<div><b>Dernière recherche</b><span>« '+esc(lastSearch.metadata?.query||'')+' » · '+esc(new Date(lastSearch.created_at).toLocaleString('fr-FR'))+'</span></div>');
+ if(lastView)rows.push('<div><b>Dernière consultation</b><span>'+esc(lastView.metadata?.lesson_name||('Fiche '+lastView.entity_id))+' · '+esc(new Date(lastView.created_at).toLocaleString('fr-FR'))+'</span></div>');
+ highlights.innerHTML=rows.join('')||'<div class="small">Les tendances apparaîtront dès que des recherches et consultations auront été enregistrées.</div>';
+}
+
 async function changeRole(userId,role){
  if(!isAdmin())return;
  const target=adminUsers.find(u=>u.user_id===userId);
@@ -113,7 +159,7 @@ function switchView(v){
  $('view-'+v).classList.remove('hidden');
  document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
  if(v==='admin'&&isAdmin())loadAdmin();
- if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);if(typeof onArizonaIntelligenceViewChange==='function')onArizonaIntelligenceViewChange(v);
+ if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);if(typeof onArizonaIntelligenceViewChange==='function')onArizonaIntelligenceViewChange(v);if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);
  if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
 function switchAdmin(sub){
@@ -121,12 +167,13 @@ function switchAdmin(sub){
  $('admin-'+sub).classList.remove('hidden');
  document.querySelectorAll('.adminSub').forEach(e=>e.classList.toggle('active',e.dataset.sub===sub));
  if(sub==='notifications') markNotificationsRead(true);
+ if(sub==='dashboard') renderAdminAnalytics();
 }
 $('loginBtn').onclick=signIn;$('signupBtn').onclick=signUp;$('logoutBtn').onclick=logout;if($('togglePassword'))$('togglePassword').onchange=()=>{const p=$('password'),c=$('togglePassword'),s=c.closest('.passwordCheck')?.querySelector('span');p.type=c.checked?'text':'password';if(s)s.textContent=c.checked?'Masquer':'Afficher';};
 $('themeBtn').onclick=()=>{const next=document.body.classList.contains('light')?'dark':'light';localStorage.setItem('az_theme',next);applyTheme()};
 $('openToday').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));$('todayName').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));if($('lessonsKpi'))$('lessonsKpi').onclick=()=>{switchView('history');setTimeout(()=>$('historySearch')?.focus(),80)};if($('favoritesKpi'))$('favoritesKpi').onclick=()=>switchView('favorites');$('closeLesson').onclick=()=>$('lessonModal').classList.remove('open');$('modalFav').onclick=()=>activeLesson&&toggleFavorite(Number(activeLesson.id));$('editLessonBtn').onclick=()=>activeLesson&&openEdit(Number(activeLesson.id));
 $('historySearch').oninput=renderLessonLists;$('importBtn').onclick=importLesson;$('newLessonBtn').onclick=newLesson;$('closeEdit').onclick=()=>$('editModal').classList.remove('open');$('saveEdit').onclick=async()=>{if($('editId').value)await saveEdit();else{const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),created_by:session.user.id,updated_by:session.user.id};const {error}=await sb.from('arizona_lessons').insert(payload);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();renderAll();await loadAdmin();toast('Fiche créée.')}};$('deleteLesson').onclick=deleteLesson;
-if($('markNotificationsRead'))$('markNotificationsRead').onclick=()=>markNotificationsRead(false);$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.backTodayBtn').forEach(b=>b.onclick=()=>switchView('home'));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
+if($('markNotificationsRead'))$('markNotificationsRead').onclick=()=>markNotificationsRead(false);if($('refreshAdminAnalytics'))$('refreshAdminAnalytics').onclick=async()=>{await loadAdmin();toast('Statistiques actualisées.');};$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.backTodayBtn').forEach(b=>b.onclick=()=>switchView('home'));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
 $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('lessonModal').classList.remove('open')});$('editModal').addEventListener('click',e=>{if(e.target===$('editModal'))$('editModal').classList.remove('open')});
 (async()=>{
  applyTheme();
