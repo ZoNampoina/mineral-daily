@@ -98,8 +98,15 @@ async function markNotificationsRead(silent=false){
  if(!silent)toast('Notifications marquées comme lues.');
 }
 function renderLogs(){
- const q=$('logSearch').value.trim().toLowerCase(),act=$('logAction').value;const rows=auditLogs.filter(l=>(!act||l.action===act)&&(!q||(String(l.actor_email||'')+' '+l.action+' '+l.entity_type+' '+String(l.entity_id||'')+' '+JSON.stringify(l.metadata||{})).toLowerCase().includes(q)));
- $('logsBody').innerHTML=rows.map(l=>'<tr><td>'+esc(new Date(l.created_at).toLocaleString('fr-FR'))+'</td><td>'+esc(l.actor_email||'Système')+'</td><td><span class="roleBadge">'+esc(l.action)+'</span></td><td>'+esc(l.entity_type)+' '+esc(l.entity_id||'')+'</td><td>'+esc(JSON.stringify(l.metadata||{}))+'</td></tr>').join('')
+ const q=$('logSearch').value.trim().toLowerCase(),act=$('logAction').value;
+ const rows=auditLogs.filter(l=>(!act||l.action===act)&&(!q||(String(l.actor_email||'')+' '+l.action+' '+l.entity_type+' '+String(l.entity_id||'')+' '+JSON.stringify(l.metadata||{})).toLowerCase().includes(q)));
+ $('logsBody').innerHTML=rows.map(l=>{
+   const dt=new Date(l.created_at);
+   const date=dt.toLocaleDateString('fr-FR')+' '+dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+   const object=(l.entity_type||'')+(l.entity_id?' · '+l.entity_id:'');
+   const details=JSON.stringify(l.metadata||{});
+   return '<tr><td data-label="Date">'+esc(date)+'</td><td data-label="Utilisateur" class="logUser">'+esc(l.actor_email||'Système')+'</td><td data-label="Action"><span class="roleBadge">'+esc(l.action)+'</span></td><td data-label="Objet" class="logObject">'+esc(object)+'</td><td data-label="Détails" class="logDetails" title="'+esc(details)+'">'+esc(details)+'</td></tr>'
+ }).join('')
 }
 function switchView(v){
  document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));$('view-'+v).classList.remove('hidden');document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));if(v==='admin'&&isAdmin())loadAdmin();if(typeof setMenuOpen==='function')setMenuOpen(false)
