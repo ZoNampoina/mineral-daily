@@ -195,7 +195,7 @@
   </div>
   <div class="aboutGrid">
     <div class="card cardPad"><div class="eyebrow">Fondateur</div><h3>RAZAFINDRAKOTO Arijaona Zo Nampoina</h3><div class="small">Conception et développement du projet ARIZONA.</div></div>
-    <div class="card cardPad"><div class="eyebrow">Version actuelle</div><div class="aboutVersion">V19.2</div><div class="small">Profil utilisateur enrichi · correctifs interface · menu À propos.</div></div>
+    <div class="card cardPad"><div class="eyebrow">Version actuelle</div><div class="aboutVersion">V19.3</div><div class="small">Finition UX · profil corrigé · affichage admin compact · révision mobile améliorée.</div></div>
   </div>
   <div class="card cardPad aboutCapabilities">
     <div class="eyebrow">Mission</div>
@@ -221,8 +221,8 @@
     <div class="card cardPad" style="margin-top:12px"><div class="eyebrow">Tendance récente</div><h3>Activités marquantes</h3><div id="adminHighlights" class="adminHighlights"></div></div>
   </div>
   <div id="admin-users" class="adminPane hidden">
-    <div class="card cardPad"><div class="small">Identifiants visibles : e-mail et UUID uniquement. Les mots de passe, hashes, tokens et clés secrètes ne sont jamais accessibles.</div></div>
-    <div class="sectionTitle">Comptes</div><div class="tableWrap"><table><thead><tr><th>Utilisateur</th><th>Profil</th><th>E-mail</th><th>UUID</th><th>Rôle</th><th>Créé</th><th>Dernière activité</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+    <div class="card cardPad"><div class="small">Le gestionnaire affiche le nom utilisateur, les informations de profil renseignées, l’e-mail et un UUID abrégé. Les mots de passe, hashes, tokens et clés secrètes ne sont jamais accessibles.</div></div>
+    <div class="sectionTitle">Comptes</div><div class="tableWrap"><table class="usersTable"><thead><tr><th>Utilisateur</th><th>Profil</th><th>E-mail</th><th>UUID</th><th>Rôle</th><th>Créé</th><th>Dernière activité</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div>
   </div>
   <div id="admin-notifications" class="adminPane hidden">
     <div class="card cardPad notificationHeader"><div><div class="eyebrow">Connexions Standard</div><div class="small">Une notification apparaît ici lorsqu’un utilisateur Standard se connecte.</div></div><button id="markNotificationsRead" class="btn">Tout marquer comme lu</button></div>
@@ -275,7 +275,6 @@
       <div class="profileField"><label class="small" for="profileBirthDate">Date de naissance</label><input id="profileBirthDate" class="input" type="date"></div>
       <div class="profileField"><label class="small" for="profileGender">Genre</label><select id="profileGender" class="select"><option value="">Non renseigné</option><option value="Homme">Homme</option><option value="Femme">Femme</option><option value="Autre">Autre</option><option value="Non précisé">Préfère ne pas préciser</option></select></div>
     </div>
-    <div class="profileField"><label class="small" for="profileDomain">Domaine</label><input id="profileDomain" class="input" maxlength="120" placeholder="Ex. Ingénierie minière, géologie, finance…"></div>
     <div class="profileField"><label class="small" for="profileStudyField">Domaine d’étude</label><input id="profileStudyField" class="input" maxlength="120" placeholder="Ex. Mines, géosciences, environnement…"></div>
     <button id="saveProfileName" class="btn primary" type="button">Enregistrer le profil</button>
   </div>

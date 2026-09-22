@@ -53,10 +53,9 @@ function renderAdmin(){
    const profileBits=[
      u.birth_date?'Naissance : '+new Date(u.birth_date+'T12:00:00').toLocaleDateString('fr-FR'):'',
      u.gender?'Genre : '+u.gender:'',
-     u.domain?'Domaine : '+u.domain:'',
      u.study_field?'Études : '+u.study_field:''
    ].filter(Boolean);
-   return '<tr><td><b>'+esc(String(u.display_name||'Utilisateur').trim()||'Utilisateur')+'</b></td><td class="adminProfileCell">'+(profileBits.length?profileBits.map(x=>'<div>'+esc(x)+'</div>').join(''):'<span class="small">Non renseigné</span>')+'</td><td>'+esc(u.email)+'</td><td style="font-family:monospace">'+esc(u.user_id)+'</td><td><select class="select roleSelect" data-user="'+u.user_id+'" style="min-width:140px"><option value="standard"'+(u.role==='standard'?' selected':'')+'>Standard</option><option value="admin"'+(u.role==='admin'?' selected':'')+'>Administrateur</option></select></td><td>'+esc(new Date(u.created_at).toLocaleString('fr-FR'))+'</td><td>'+(u.last_seen_at?esc(new Date(u.last_seen_at).toLocaleString('fr-FR')):'—')+'</td><td><button class="btn danger deleteUserBtn" data-delete-user="'+u.user_id+'" '+(self?'disabled title="Impossible de supprimer votre propre compte"':'')+'>Supprimer</button></td></tr>'
+   return '<tr><td><b>'+esc(String(u.display_name||'Utilisateur').trim()||'Utilisateur')+'</b></td><td class="adminProfileCell">'+(profileBits.length?profileBits.map(x=>'<div>'+esc(x)+'</div>').join(''):'<span class="small">Non renseigné</span>')+'</td><td>'+esc(u.email)+'</td><td class="adminUuidCell" title="'+esc(u.user_id)+'">'+esc(String(u.user_id).slice(0,8))+'…</td><td><select class="select roleSelect" data-user="'+u.user_id+'" style="min-width:140px"><option value="standard"'+(u.role==='standard'?' selected':'')+'>Standard</option><option value="admin"'+(u.role==='admin'?' selected':'')+'>Administrateur</option></select></td><td>'+esc(new Date(u.created_at).toLocaleString('fr-FR'))+'</td><td>'+(u.last_seen_at?esc(new Date(u.last_seen_at).toLocaleString('fr-FR')):'—')+'</td><td><button class="btn danger deleteUserBtn" data-delete-user="'+u.user_id+'" '+(self?'disabled title="Impossible de supprimer votre propre compte"':'')+'>Supprimer</button></td></tr>'
  }).join('');
 
  document.querySelectorAll('.roleSelect').forEach(s=>s.onchange=()=>changeRole(s.dataset.user,s.value));

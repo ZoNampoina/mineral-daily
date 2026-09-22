@@ -1195,3 +1195,97 @@ body.menuOpen{overflow:hidden}
  .aboutGrid{grid-template-columns:1fr}
  .menuHeadActions{gap:5px}
 }
+
+
+/* === ARIZONA V19.3 · UX polish === */
+.appMenuHead #closeMenuBtn,
+.appMenuHead #menuThemeBtn{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:4px 6px !important;
+  min-width:auto !important;
+  width:auto !important;
+  height:auto !important;
+  border-radius:0 !important;
+  color:var(--text) !important;
+}
+.appMenuHead #closeMenuBtn{
+  font-size:27px !important;
+  line-height:1 !important;
+}
+.appMenuHead #menuThemeBtn{
+  width:30px !important;
+  height:30px !important;
+  min-width:30px !important;
+  padding:0 !important;
+}
+.appMenuHead #closeMenuBtn:hover,
+.appMenuHead #menuThemeBtn:hover{color:var(--gold2) !important}
+.menuThemeBtn .themeSunGlyph,.menuThemeBtn .themeMoonGlyph{font-size:19px}
+#profileModal{z-index:95}
+
+.usersTable{min-width:900px;font-size:11px}
+.usersTable th,.usersTable td{padding:8px 9px}
+.usersTable th:nth-child(1){width:130px}
+.usersTable th:nth-child(2){width:165px}
+.usersTable th:nth-child(3){width:190px}
+.usersTable th:nth-child(4){width:88px}
+.usersTable th:nth-child(5){width:135px}
+.usersTable th:nth-child(6),.usersTable th:nth-child(7){width:125px}
+.usersTable th:nth-child(8){width:86px}
+.usersTable .select{padding:8px 9px;border-radius:10px;font-size:11px}
+.adminProfileCell{min-width:145px;max-width:175px}
+.adminProfileCell div{font-size:10px;line-height:1.4}
+.adminUuidCell{font-family:monospace;white-space:nowrap;color:var(--muted)}
+
+.masteryCard{
+  grid-template-columns:62px minmax(0,1fr) 54px 28px;
+  gap:10px;
+}
+.masteryPercent{
+  width:54px;
+  min-width:54px;
+  text-align:center;
+  font-size:13px;
+  line-height:1;
+  font-weight:900;
+  color:var(--gold2);
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.masteryCard .reviewOne{justify-self:end}
+@media(max-width:620px){
+  .usersTable{min-width:820px}
+  .usersTable th,.usersTable td{padding:7px 8px}
+  .masteryCard{
+    grid-template-columns:48px minmax(0,1fr) 46px 24px !important;
+    gap:7px !important;
+    padding:10px;
+  }
+  .masteryCard .badge{
+    width:48px;
+    height:48px;
+    min-width:48px;
+    font-size:18px;
+    border-radius:12px;
+  }
+  .masteryCard .lessonTitle{font-size:14px}
+  .masteryCard .lessonDesc{font-size:10px;margin-top:3px}
+  .masteryTrack{margin:5px 0 3px}
+  .masteryPercent{
+    width:46px;
+    min-width:46px;
+    font-size:12px;
+  }
+  .masteryCard .reviewOne{font-size:17px}
+}
+@media(max-width:390px){
+  .masteryCard{
+    grid-template-columns:44px minmax(0,1fr) 42px 22px !important;
+    gap:6px !important;
+    padding:9px;
+  }
+  .masteryCard .badge{width:44px;height:44px;min-width:44px;font-size:16px}
+  .masteryPercent{width:42px;min-width:42px;font-size:11px}
+}
