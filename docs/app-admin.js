@@ -109,7 +109,12 @@ function renderLogs(){
  }).join('')
 }
 function switchView(v){
- document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));$('view-'+v).classList.remove('hidden');document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));if(v==='admin'&&isAdmin())loadAdmin();if(typeof setMenuOpen==='function')setMenuOpen(false)
+ document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));
+ $('view-'+v).classList.remove('hidden');
+ document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
+ if(v==='admin'&&isAdmin())loadAdmin();
+ if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);
+ if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
 function switchAdmin(sub){
  document.querySelectorAll('.adminPane').forEach(e=>e.classList.add('hidden'));
