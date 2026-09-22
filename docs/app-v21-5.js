@@ -1,6 +1,7 @@
 
 let miningProjectsV215=[],projectLessonsV215=[],fieldCampaignsV215=[],fieldSamplesV215=[],assayResultsV215=[];
 let activeProjectIdV215=null,activeProjectTabV215='overview';
+let arizonaV215Loaded=false,arizonaV215Loading=null;
 
 function v215Text(v){return String(v??'').replace(/\s+/g,' ').trim()}
 function v215ProjectType(v){return ({exploration:'Exploration',development:'Développement',exploitation:'Exploitation',study:'Étude',permit:'Permis',other:'Autre'})[v]||v}
@@ -35,6 +36,13 @@ async function loadArizonaV215(){
   miningProjectsV215=p.data||[];projectLessonsV215=l.data||[];fieldCampaignsV215=c.data||[];fieldSamplesV215=s.data||[];assayResultsV215=a.data||[];
   if(activeProjectIdV215&&!v215ProjectById(activeProjectIdV215))activeProjectIdV215=null;
   if(!activeProjectIdV215&&miningProjectsV215[0])activeProjectIdV215=Number(miningProjectsV215[0].id);
+  arizonaV215Loaded=true;
+}
+async function ensureArizonaV215(force=false){
+  if(arizonaV215Loaded&&!force)return;
+  if(arizonaV215Loading&&!force)return arizonaV215Loading;
+  arizonaV215Loading=loadArizonaV215().finally(()=>{arizonaV215Loading=null});
+  return arizonaV215Loading;
 }
 
 function renderProjectsV215(){
@@ -282,8 +290,8 @@ async function deleteAssayV215(id){
   const {error}=await sb.from('assay_results').delete().eq('id',id);if(error)return toast(error.message);
   closeV215Modal();await loadArizonaV215();renderProjectsV215();toast('Analyse supprimée.');
 }
-function onArizonaV215ViewChange(view){if(view==='projects')renderProjectsV215()}
-function renderArizonaV215(){if(!$('view-projects')?.classList.contains('hidden'))renderProjectsV215()}
+async function onArizonaV215ViewChange(view){if(view==='projects'){await ensureArizonaV215();renderProjectsV215()}}
+function renderArizonaV215(){if(arizonaV215Loaded&&!$('view-projects')?.classList.contains('hidden'))renderProjectsV215()}
 
 if($('v215NewProjectBtn'))$('v215NewProjectBtn').onclick=()=>openProjectEditorV215();
 if($('v215ProjectSearch'))$('v215ProjectSearch').oninput=renderProjectsV215;
