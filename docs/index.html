@@ -195,7 +195,7 @@
   </div>
   <div class="aboutGrid">
     <div class="card cardPad"><div class="eyebrow">Fondateur</div><h3>RAZAFINDRAKOTO Arijaona Zo Nampoina</h3><div class="small">Conception et développement du projet ARIZONA.</div></div>
-    <div class="card cardPad"><div class="eyebrow">Version actuelle</div><div class="aboutVersion">V19.3</div><div class="small">Finition UX · profil corrigé · affichage admin compact · révision mobile améliorée.</div></div>
+    <div class="card cardPad"><div class="eyebrow">Version actuelle</div><div class="aboutVersion">V20</div><div class="small">Données structurées · sources explicites · historique des versions.</div></div>
   </div>
   <div class="card cardPad aboutCapabilities">
     <div class="eyebrow">Mission</div>
@@ -243,6 +243,7 @@
 <div id="lessonModal" class="modal"><div class="modalPanel">
   <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden editIconBtn" type="button" aria-label="Modifier" title="Modifier">✎</button><button id="closeLesson" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div></div>
   <div class="sectionTitleRow modalImageTitle"><div class="sectionTitle">Images réelles</div><button id="refreshModalImages" class="btn favBtn compactIconBtn" type="button" title="Rafraîchir les images" aria-label="Rafraîchir les images">↻</button></div><div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="detailSectionHead"><div class="sectionTitle">Détails techniques</div><div class="detailTools"><button id="expandAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=true})">Tout afficher</button><button id="collapseAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=false})">Tout réduire</button></div></div><div id="modalDetails" class="detailGrid"></div>
+  <div class="sectionTitle">Données structurées V20</div><div id="structuredDataPanel"></div>
   <div class="sectionTitle">Sources & qualité documentaire</div><div id="sourceQualityPanel" class="azSourcePanel"></div>
   <div class="sectionTitle">Personnel</div>
   <div class="personalGrid">
@@ -256,7 +257,50 @@
   <div class="modalHead"><h2 style="margin:0">Édition administrateur</h2><button id="closeEdit" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div><input id="editId" type="hidden">
   <div class="grid2"><div><div class="small">Date</div><input id="editDate" class="input" type="date"></div><div><div class="small">Nom</div><input id="editName" class="input"></div></div>
   <div class="grid2" style="margin-top:8px"><div><div class="small">Symbole</div><input id="editSymbol" class="input" maxlength="12"></div><div><div class="small">Images personnalisées (URLs, séparées par ligne)</div><textarea id="editImages" class="textarea" style="min-height:95px"></textarea></div></div>
-  <div class="small" style="margin-top:9px">Texte complet de la fiche</div><textarea id="editRaw" class="textarea" style="min-height:360px"></textarea>
+  <div class="small" style="margin-top:9px">Texte complet de la fiche</div><textarea id="editRaw" class="textarea" style="min-height:320px"></textarea>
+
+  <div class="v20EditorSection">
+    <div class="v20EditorHead"><div><div class="eyebrow">ARIZONA V20</div><h3>Données structurées</h3></div><button id="v20ExtractBtn" class="btn" type="button">Extraire depuis le texte</button></div>
+    <div class="small">Ces champs alimentent progressivement la recherche avancée, le Knowledge Graph et les futurs outils métier. Le texte complet reste conservé.</div>
+    <div class="grid2 v20EditorGrid">
+      <div><div class="small">Formule</div><input id="v20Formula" class="input"></div>
+      <div><div class="small">Classe</div><input id="v20Class" class="input"></div>
+      <div><div class="small">Système cristallin</div><input id="v20Crystal" class="input"></div>
+      <div><div class="small">Dureté (Mohs)</div><input id="v20Hardness" class="input"></div>
+      <div><div class="small">Densité</div><input id="v20Density" class="input"></div>
+      <div><div class="small">Statut des données</div><select id="v20DataStatus" class="select"><option value="legacy">Héritée</option><option value="draft">Brouillon</option><option value="verified">Vérifiée</option><option value="needs_review">À revoir</option></select></div>
+    </div>
+    <div class="grid2 v20EditorGrid">
+      <div><div class="small">Type(s) de gisement</div><textarea id="v20DepositTypes" class="textarea v20SmallTextarea"></textarea></div>
+      <div><div class="small">Minéraux associés</div><textarea id="v20Associated" class="textarea v20SmallTextarea"></textarea></div>
+      <div><div class="small">Exploitation</div><textarea id="v20Mining" class="textarea v20SmallTextarea"></textarea></div>
+      <div><div class="small">Traitement / minéralurgie</div><textarea id="v20Processing" class="textarea v20SmallTextarea"></textarea></div>
+      <div><div class="small">Prix de référence</div><input id="v20Price" class="input"></div>
+      <div><div class="small">Unité du prix</div><input id="v20PriceUnit" class="input"></div>
+    </div>
+    <div><div class="small">Madagascar</div><textarea id="v20Madagascar" class="textarea v20SmallTextarea"></textarea></div>
+  </div>
+
+  <div class="v20EditorSection">
+    <div class="eyebrow">Traçabilité</div><h3>Sources explicites</h3>
+    <div id="v20SourceList" class="v20SourceList"></div>
+    <div class="v20SourceForm">
+      <input id="v20SourceTitle" class="input" placeholder="Titre de la source">
+      <input id="v20SourceOrg" class="input" placeholder="Organisme / auteur">
+      <input id="v20SourceUrl" class="input" placeholder="URL">
+      <select id="v20SourceType" class="select"><option value="institutional">Institutionnelle</option><option value="scientific">Scientifique</option><option value="technical">Technique</option><option value="regulatory">Réglementaire</option><option value="company">Entreprise</option><option value="web" selected>Web</option><option value="other">Autre</option></select>
+      <input id="v20SourceYear" class="input" type="number" min="1800" max="2200" placeholder="Année">
+      <input id="v20SourceScope" class="input" placeholder="Données concernées, séparées par virgule">
+      <textarea id="v20SourceNote" class="textarea v20SmallTextarea" placeholder="Note facultative"></textarea>
+      <button id="v20AddSourceBtn" class="btn" type="button">Ajouter la source</button>
+    </div>
+  </div>
+
+  <div class="v20EditorSection">
+    <div class="eyebrow">Historique</div><h3>Versions précédentes</h3>
+    <div id="v20VersionList" class="v20VersionList"><div class="small">L’historique apparaîtra pour une fiche existante.</div></div>
+  </div>
+
   <div class="grid2" style="margin-top:10px"><button id="saveEdit" class="btn primary">Enregistrer</button><button id="deleteLesson" class="btn danger">Supprimer la fiche</button></div>
 </div></div>
 
@@ -281,6 +325,6 @@
 </div></div>
 
 <div id="toast" class="toast"></div>
-<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-intelligence.js"></script><script src="./app-engineer.js"></script><script src="./app-admin.js"></script>
+<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-intelligence.js"></script><script src="./app-engineer.js"></script><script src="./app-v20.js"></script><script src="./app-admin.js"></script>
 </body>
 </html>
