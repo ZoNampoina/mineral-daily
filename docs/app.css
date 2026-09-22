@@ -256,3 +256,30 @@ body.menuOpen{overflow:hidden}
     gap:7px;
   }
 }
+
+/* True viewport-edge placement for sync + menu */
+.compactTopbar{
+  position:relative;
+  padding-right:0;
+}
+.compactHeaderActions{
+  position:absolute;
+  right:calc((100% - 100vw)/2 + max(14px, env(safe-area-inset-right)));
+  top:50%;
+  transform:translateY(-50%);
+  z-index:6;
+}
+@media(max-width:620px){
+  .compactTopbar{
+    position:relative;
+    min-height:56px;
+    padding-right:96px;
+  }
+  .compactHeaderActions{
+    position:absolute;
+    right:calc((100% - 100vw)/2 + max(8px, env(safe-area-inset-right)));
+    top:50%;
+    transform:translateY(-50%);
+    margin:0;
+  }
+}
