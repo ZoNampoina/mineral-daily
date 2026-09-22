@@ -113,7 +113,7 @@ function switchView(v){
  $('view-'+v).classList.remove('hidden');
  document.querySelectorAll('#mainTabs .tab').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
  if(v==='admin'&&isAdmin())loadAdmin();
- if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);
+ if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);if(typeof onArizonaIntelligenceViewChange==='function')onArizonaIntelligenceViewChange(v);
  if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
 function switchAdmin(sub){
