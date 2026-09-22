@@ -140,14 +140,16 @@ function renderProfileIdentity(){
    $('profileBirthDate').max=new Date().toISOString().slice(0,10);
  }
  if($('profileGender'))$('profileGender').value=profile?.gender||'';
- if($('profileDomain'))$('profileDomain').value=profile?.domain||'';
  if($('profileStudyField'))$('profileStudyField').value=profile?.study_field||'';
 }
 function openProfileEditor(){
  if(!profile)return;
  renderProfileIdentity();
- $('profileModal')?.classList.add('open');
- setTimeout(()=>$('profileDisplayName')?.select(),40);
+ if(typeof setMenuOpen==='function')setMenuOpen(false);
+ requestAnimationFrame(()=>{
+   $('profileModal')?.classList.add('open');
+   setTimeout(()=>$('profileDisplayName')?.focus(),60);
+ });
 }
 async function saveProfileDisplayName(){
  if(!session||!profile)return;
@@ -155,17 +157,15 @@ async function saveProfileDisplayName(){
  const name=String(input?.value||'').replace(/\s+/g,' ').trim();
  const birthDate=String($('profileBirthDate')?.value||'').trim();
  const gender=String($('profileGender')?.value||'').trim();
- const domain=String($('profileDomain')?.value||'').replace(/\s+/g,' ').trim();
  const studyField=String($('profileStudyField')?.value||'').replace(/\s+/g,' ').trim();
  if(!name){toast('Le nom ne peut pas être vide.');input?.focus();return}
  if(name.length>50){toast('Le nom est limité à 50 caractères.');return}
- if(domain.length>120||studyField.length>120){toast('Les champs Domaine et Domaine d’étude sont limités à 120 caractères.');return}
+ if(studyField.length>120){toast('Le champ Domaine d’étude est limité à 120 caractères.');return}
  if(birthDate&&birthDate>new Date().toISOString().slice(0,10)){toast('La date de naissance ne peut pas être dans le futur.');return}
  const payload={
    display_name:name,
    birth_date:birthDate||null,
    gender:gender||null,
-   domain:domain||null,
    study_field:studyField||null
  };
  const btn=$('saveProfileName');if(btn)btn.disabled=true;
