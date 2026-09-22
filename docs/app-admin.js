@@ -83,7 +83,7 @@ function renderAdminEntitiesV216(){
  list.innerHTML=adminMadagascarEntities.length?adminMadagascarEntities.slice(0,30).map(e=>{
    const u=adminUsers.find(x=>x.user_id===e.owner_user_id);
    const who=u?.display_name||u?.email||(e.owner_user_id?'Utilisateur':'Ancienne donnée');
-   return '<div class="adminEntityRow"><div><b>'+esc(e.name)+'</b><small>'+esc([v21TypeLabel?.(e.entity_type)||e.entity_type,e.region].filter(Boolean).join(' · '))+'</small></div><div><span>'+esc(who)+'</span><small>'+esc(new Date(e.updated_at||e.created_at).toLocaleDateString('fr-FR'))+'</small></div></div>';
+   return '<div class="adminEntityRow"><div><b>'+esc(e.name)+'</b><small>'+esc([(typeof v21TypeLabel==='function'?v21TypeLabel(e.entity_type):e.entity_type),e.region].filter(Boolean).join(' · '))+'</small></div><div><span>'+esc(who)+'</span><small>'+esc(new Date(e.updated_at||e.created_at).toLocaleDateString('fr-FR'))+'</small></div></div>';
  }).join(''):'<div class="small">Aucune entité structurée utilisateur.</div>';
 }
 function renderAdminAnalytics(){
