@@ -579,3 +579,74 @@ body.menuOpen{overflow:hidden}
   .progressCard .badge{width:46px;height:46px;min-width:46px;font-size:17px}
   .progressOpenBtn{padding:7px 8px;font-size:10px}
 }
+
+/* ARIZONA navigation refinement v11 */
+.brandMenuBtn{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  padding:0;
+  margin:0;
+  cursor:pointer;
+  text-align:left;
+  font:inherit;
+  font-weight:950;
+  letter-spacing:.07em;
+  line-height:1;
+  transition:color .18s ease,transform .18s ease;
+}
+.brandMenuBtn:hover{color:var(--gold2);transform:translateX(1px)}
+.brandMenuBtn:focus-visible{outline:2px solid var(--gold);outline-offset:5px;border-radius:5px}
+
+.kpiButton{
+  appearance:none;
+  width:100%;
+  text-align:left;
+  color:var(--text);
+  font:inherit;
+  cursor:pointer;
+  transition:border-color .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.kpiButton:hover{
+  border-color:var(--gold);
+  transform:translateY(-1px);
+}
+.kpiButton:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+.openTodayPlus{
+  width:44px;
+  height:44px;
+  min-width:44px;
+  padding:0;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  font-size:28px;
+  line-height:1;
+  font-weight:500;
+}
+.openTodayPlus:hover{transform:scale(1.04)}
+
+.viewBackRow{
+  display:flex;
+  justify-content:flex-start;
+  margin:0 0 12px;
+}
+.backTodayBtn{
+  padding:8px 11px;
+  font-size:12px;
+  border-radius:999px;
+}
+
+@media(max-width:620px){
+  .brandMenuBtn{font-size:14px}
+  .openTodayPlus{
+    width:40px;
+    height:40px;
+    min-width:40px;
+    font-size:25px;
+  }
+  .viewBackRow{margin-bottom:10px}
+  .backTodayBtn{padding:7px 10px;font-size:11px}
+}
