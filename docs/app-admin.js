@@ -1,4 +1,4 @@
-let adminNotifications=[];
+let adminNotifications=[],adminStructuredEntities=[];
 async function importLesson(){
  if(!isAdmin())return toast('Action réservée à l’administrateur.');
  try{
@@ -29,17 +29,20 @@ function newLesson(){
 }
 async function loadAdmin(){
  if(!isAdmin())return;
- const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr},{data:notifs,error:nerr}]=await Promise.all([
+ const since=new Date(Date.now()-31*864e5).toISOString();
+ const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr},{data:notifs,error:nerr},{data:entities,error:eerr}]=await Promise.all([
    sb.from('profiles').select('*').order('created_at',{ascending:true}),
    sb.from('user_activity').select('*'),
-   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(2000),
-   sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100)
+   sb.from('audit_logs').select('*').gte('created_at',since).order('created_at',{ascending:false}).limit(1200),
+   sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100),
+   sb.from('madagascar_entities').select('id,name,entity_type,region,status,owner_user_id,updated_at').order('updated_at',{ascending:false}).limit(200)
  ]);
- if(uerr||aerr||lerr||nerr){console.warn(uerr||aerr||lerr||nerr);return}
+ if(uerr||aerr||lerr||nerr||eerr){console.warn(uerr||aerr||lerr||nerr||eerr);return}
  const amap=new Map((acts||[]).map(a=>[a.user_id,a.last_seen_at]));
  adminUsers=(users||[]).map(u=>({...u,last_seen_at:amap.get(u.user_id)||null}));
  auditLogs=logs||[];
  adminNotifications=notifs||[];
+ adminStructuredEntities=entities||[];
  renderAdmin()
 }
 function renderAdmin(){
@@ -62,7 +65,13 @@ function renderAdmin(){
  document.querySelectorAll('.roleSelect').forEach(s=>s.onchange=()=>changeRole(s.dataset.user,s.value));
  document.querySelectorAll('.deleteUserBtn:not([disabled])').forEach(b=>b.onclick=()=>deleteArizonaUser(b.dataset.deleteUser));
  renderNotifications();
- renderLogs()
+ renderLogs();
+ renderAdminStructuredEntities()
+}
+function renderAdminStructuredEntities(){
+ const box=$('adminStructuredEntities'),count=$('adminEntityCount');if(!box||!count)return;
+ count.textContent=String(adminStructuredEntities.length);
+ box.innerHTML=adminStructuredEntities.length?adminStructuredEntities.map(e=>{const u=adminUsers.find(x=>x.user_id===e.owner_user_id);const owner=u?.display_name||u?.email||String(e.owner_user_id||'').slice(0,8)+'…';return '<div class="adminEntityRow"><div><b>'+esc(e.name)+'</b><small>'+esc((e.region||'Sans région')+' · '+v21TypeLabel(e.entity_type)+' · '+v21StatusLabel(e.status))+'</small></div><span>'+esc(owner)+'</span></div>'}).join(''):'<div class="small">Aucune entité structurée créée par les utilisateurs.</div>';
 }
 
 function renderAdminAnalytics(){
@@ -195,25 +204,31 @@ $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('
 })();
 
 // --- Synchronisation automatique + raccourcis administrateur ---
+let refreshArizonaInFlight=null,lastBackgroundRefreshAt=0;
 async function refreshArizona(showToast=false){
-  if(!session) return;
-  try{
-    setSync('Synchronisation…',false);
-    const before=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
-    await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
-    if(typeof loadArizonaV20==='function')await loadArizonaV20();
-    if(typeof loadArizonaV21==='function')await loadArizonaV21();
-    if(typeof loadArizonaV215==='function')await loadArizonaV215();
-    renderAll();
-    if(isAdmin()) await loadAdmin();
-    const after=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
-    setSync('Synchronisé',true);
-    if(showToast) toast(before!==after ? 'Nouvelle fiche récupérée.' : 'ARIZONA est à jour.');
-  }catch(e){
-    console.error(e);
-    setSync('Erreur synchro',false);
-    if(showToast) toast('Synchronisation impossible : '+e.message);
-  }
+  if(!session)return;
+  if(refreshArizonaInFlight)return refreshArizonaInFlight;
+  if(!showToast&&Date.now()-lastBackgroundRefreshAt<90000)return;
+  refreshArizonaInFlight=(async()=>{
+    try{
+      setSync('Synchronisation…',false);
+      const before=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
+      await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
+      if(typeof loadArizonaV20==='function')await loadArizonaV20();
+      if(typeof arizonaV21Loaded!=='undefined'&&arizonaV21Loaded&&typeof loadArizonaV21==='function')await loadArizonaV21();
+      if(typeof arizonaV215Loaded!=='undefined'&&arizonaV215Loaded&&typeof loadArizonaV215==='function')await loadArizonaV215();
+      renderAll();
+      if(isAdmin()&&!$('view-admin')?.classList.contains('hidden'))await loadAdmin();
+      const after=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
+      lastBackgroundRefreshAt=Date.now();
+      setSync('Synchronisé',true);
+      if(showToast)toast(before!==after?'Nouvelle fiche récupérée.':'ARIZONA est à jour.');
+    }catch(e){
+      console.error(e);setSync('Erreur synchro',false);
+      if(showToast)toast('Synchronisation impossible : '+e.message);
+    }finally{refreshArizonaInFlight=null}
+  })();
+  return refreshArizonaInFlight;
 }
 
 if($('refreshBtn')) $('refreshBtn').onclick=()=>refreshArizona(true);
@@ -229,7 +244,7 @@ if($('quickImportBtn')) $('quickImportBtn').onclick=()=>{
 };
 
 // Vérifie le cloud automatiquement : utile si la fiche quotidienne arrive pendant que l'app est déjà ouverte.
-setInterval(()=>{ if(session) refreshArizona(false); }, 60000);
+setInterval(()=>{ if(session&&!document.hidden) refreshArizona(false); }, 180000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden && session) refreshArizona(false); });
 window.addEventListener('focus',()=>{ if(session) refreshArizona(false); });
 
