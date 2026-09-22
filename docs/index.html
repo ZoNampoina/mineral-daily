@@ -49,6 +49,8 @@
     <button class="tab" data-view="history">Historique</button>
     <button class="tab" data-view="favorites">Favoris</button>
     <button class="tab" data-view="progress">Progression</button>
+    <button class="tab" data-view="explorer">Explorer</button>
+    <button class="tab" data-view="madagascar">Madagascar</button>
     <button class="tab" data-view="compare">Comparer</button>
     <button class="tab" data-view="collections">Collections</button>
     <button class="tab" data-view="review">Révision</button>
@@ -79,6 +81,7 @@
     <article class="card hero"><div><div class="eyebrow">Fiche du jour</div><div class="heroMain"><div><button id="todayName" class="mineralName todayMineralBtn" type="button" title="Ouvrir la fiche complète">—</button><div id="todayDate" class="date"></div></div><div id="todaySymbol" class="symbol"></div></div><div id="todaySummary" class="summary"></div></div><div style="margin-top:18px"><button id="openToday" class="btn primary openTodayPlus" type="button" title="Ouvrir la fiche complète" aria-label="Ouvrir la fiche complète">+</button></div></article>
     <div class="kpis"><button id="lessonsKpi" class="card kpi kpiButton" type="button" title="Afficher l’historique"><strong id="countLessons">0</strong><span>fiches techniques</span></button><button id="favoritesKpi" class="card kpi kpiButton" type="button" title="Afficher les favoris"><strong id="countFav">0</strong><span>favoris</span></button><div class="card kpi"><strong id="avgQuiz">—</strong><span>moyenne quiz</span></div><div class="card kpi"><strong id="cloudKpi">✓</strong><span>synchronisation cloud</span></div></div>
   </div>
+  <div class="sectionTitle">Tableau de bord intelligent</div><div id="smartDashboard"></div>
   <div class="sectionTitle">Images réelles</div><div id="homeGallery" class="gallery"></div>
 </section>
 
@@ -86,6 +89,45 @@
 <section id="view-favorites" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div id="favoritesList" class="list"></div></section>
 <section id="view-progress" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div class="card cardPad"><div class="eyebrow">Progression</div><h2>Quiz minéralogie & ingénierie</h2><div id="progressSummary" class="summary"></div></div><div class="sectionTitle">Résultats</div><div id="progressList" class="list"></div></section>
 
+
+
+<section id="view-explorer" class="view hidden">
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
+  <div class="card cardPad azExplorerHero">
+    <div class="eyebrow">Recherche intelligente</div>
+    <h2>Explorer ARIZONA</h2>
+    <div class="small">Recherche dans les noms, propriétés, géologie, exploitation, traitement, marché et contexte Madagascar.</div>
+    <div class="azSearchControls">
+      <input id="smartSearch" class="input" placeholder="Ex. latérite, HPAL, conducteur, batterie, Madagascar…">
+      <select id="smartScope" class="select">
+        <option value="all">Toutes les données</option>
+        <option value="name">Nom / symbole</option>
+        <option value="geology">Géologie</option>
+        <option value="processing">Exploitation / traitement</option>
+        <option value="market">Marché / économie</option>
+        <option value="madagascar">Madagascar</option>
+      </select>
+    </div>
+    <div class="azFilterChecks">
+      <label><input id="smartMadagascarOnly" type="checkbox"> Madagascar uniquement</label>
+      <label><input id="smartFavoritesOnly" type="checkbox"> Favoris uniquement</label>
+      <span id="smartResultCount" class="small"></span>
+    </div>
+  </div>
+  <div id="smartResults" class="azResultList"></div>
+</section>
+
+<section id="view-madagascar" class="view hidden">
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
+  <div class="card cardPad azMadagascarHero">
+    <div class="eyebrow">Madagascar Mining Intelligence</div>
+    <h2>Base Madagascar</h2>
+    <div class="small">Vue transversale des informations Madagascar déjà présentes dans les fiches ARIZONA.</div>
+    <div id="madagascarStats" class="azMadStats"></div>
+    <input id="madagascarSearch" class="input" placeholder="Rechercher une substance, région, projet, commune…">
+  </div>
+  <div id="madagascarList" class="azMadGrid"></div>
+</section>
 
 <section id="view-compare" class="view hidden">
   <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
@@ -144,6 +186,7 @@
 <div id="lessonModal" class="modal"><div class="modalPanel">
   <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden editIconBtn" type="button" aria-label="Modifier" title="Modifier">✎</button><button id="closeLesson" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div></div>
   <div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="detailSectionHead"><div class="sectionTitle">Détails techniques</div><div class="detailTools"><button id="expandAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=true})">Tout afficher</button><button id="collapseAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=false})">Tout réduire</button></div></div><div id="modalDetails" class="detailGrid"></div>
+  <div class="sectionTitle">Sources & qualité documentaire</div><div id="sourceQualityPanel" class="azSourcePanel"></div>
   <div class="sectionTitle">Personnel</div>
   <div class="personalGrid">
     <div class="card cardPad"><div class="eyebrow">Mes notes</div><textarea id="personalNote" class="textarea noteTextarea" placeholder="Mes observations, rappels, liens avec mes projets…"></textarea><button id="savePersonalNote" class="btn" style="margin-top:8px">Enregistrer la note</button><span id="noteStatus" class="small" style="margin-left:8px"></span></div>
@@ -161,6 +204,6 @@
 </div></div>
 
 <div id="toast" class="toast"></div>
-<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-admin.js"></script>
+<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-intelligence.js"></script><script src="./app-admin.js"></script>
 </body>
 </html>
