@@ -182,15 +182,15 @@ function derivedGraphRelationsV21(l){
   const rel=[];
   v21SplitTerms(geo.deposit_types,6).forEach(label=>rel.push({relation_type:'deposit_type',target_kind:'deposit_type',target_label:label,derived:true}));
   v21SplitTerms(geo.associated_minerals,8).forEach(label=>rel.push({relation_type:'associated_with',target_kind:'concept',target_label:label,derived:true}));
-  const proc=v21Text(processing.summary);if(proc)rel.push({relation_type:'processed_by',target_kind:'process',target_label:compactText(proc,64),derived:true});
-  const use=v21Text(uses.summary);if(use)rel.push({relation_type:'used_in',target_kind:'use',target_label:compactText(use,64),derived:true});
+  const proc=v21Text(processing.summary||section(l.raw_text,'TRAITEMENT / MINÉRALURGIE'));if(proc)rel.push({relation_type:'processed_by',target_kind:'process',target_label:compactText(proc,64),derived:true});
+  const use=v21Text(uses.summary||section(l.raw_text,'USAGES'));if(use)rel.push({relation_type:'used_in',target_kind:'use',target_label:compactText(use,64),derived:true});
   v21EntitiesForLesson(l.id).forEach(e=>rel.push({relation_type:'project_link',target_kind:'madagascar_entity',target_entity_id:e.id,target_label:e.name,derived:true}));
   return rel;
 }
 function graphRelationsForLessonV21(l){
   const stored=knowledgeRelationsV21.filter(r=>Number(r.source_lesson_id)===Number(l.id));
   const derived=derivedGraphRelationsV21(l);
-  const key=r=>[r.relation_type,r.target_kind,r.target_lesson_id||'',r.target_entity_id||'',v21Norm(r.target_label||'')].join('|');
+  const key=r=>[r.relation_type,r.target_kind,r.target_lesson_id||'',r.target_entity_id||'',(r.target_lesson_id||r.target_entity_id)?'':v21Norm(r.target_label||'')].join('|');
   const seen=new Set(stored.map(key));
   return [...stored,...derived.filter(r=>!seen.has(key(r)))];
 }
