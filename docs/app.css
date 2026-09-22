@@ -1495,3 +1495,9 @@ body.menuOpen{overflow:hidden}
  .v215ProjectKpis strong{font-size:20px}
  .v21GraphEdgeLabel{display:none}
 }
+
+.v21GraphLegend{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;padding:0 8px 10px;font-size:9px;color:var(--muted)}
+.v21GraphLegend span{display:flex;align-items:center;gap:6px}
+.v21GraphLegend i{display:inline-block;width:28px;height:0;border-top:2px solid var(--muted)}
+.v21GraphLegend i.derived{border-top-style:dashed;opacity:.65}
+.v21GraphLegend i.curated{border-top-color:var(--gold2);border-top-width:3px}
