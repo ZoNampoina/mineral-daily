@@ -169,12 +169,32 @@ function lessonCard(l,admin=false){
   const fav=favorites.has(Number(l.id)),summary=lessonSummaryV217(l);
   return '<div class="card lessonCard lessonCardClickable" data-open-card="'+l.id+'" tabindex="0" role="button" aria-label="Ouvrir la fiche '+esc(l.name)+'"><div class="thumb thumbFallback" data-thumb="'+l.id+'">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+' <span class="roleBadge">'+esc(compactSymbol(l))+'</span></div><div class="lessonDesc">'+esc(formatDate(l.lesson_date))+'</div><div class="lessonSummary">'+esc(summary||'Ouvrir la fiche pour consulter les détails.')+'</div></div><div class="lessonActions"><button class="btn favToggle" data-fav="'+l.id+'" title="Favori" aria-label="Favori">'+(fav?'★':'☆')+'</button>'+(admin?'<button class="btn editLesson editIconBtn" data-edit="'+l.id+'" aria-label="Modifier" title="Modifier">✎</button>':'')+'</div></div>';
 }
-function renderLessonLists(){
+let azHistoryLimitV217=60,azFavoritesLimitV217=60;
+function renderHistoryV217(){
+  const box=$('historyList');if(!box)return;
   const q=String($('historySearch')?.value||'').trim().toLowerCase();
   const filtered=lessons.filter(l=>!q||[l.name,l.symbol,lessonSummaryV217(l),lessonMadagascarV217(l)].join(' ').toLowerCase().includes(q));
-  $('historyList').innerHTML=filtered.map(l=>lessonCard(l)).join('')||'<div class="card cardPad small">Aucun résultat.</div>';
-  const favs=lessons.filter(l=>favorites.has(Number(l.id)));$('favoritesList').innerHTML=favs.map(l=>lessonCard(l)).join('')||'<div class="card cardPad small">Aucun favori pour le moment.</div>';
-  if(isAdmin()&&$('adminLessonsList'))$('adminLessonsList').innerHTML=lessons.map(l=>lessonCard(l,true)).join('');
+  const visible=filtered.slice(0,azHistoryLimitV217);
+  box.innerHTML=visible.map(l=>lessonCard(l)).join('')||'<div class="card cardPad small">Aucun résultat.</div>';
+  if(filtered.length>visible.length)box.insertAdjacentHTML('beforeend','<button id="historyLoadMoreV217" class="btn v217LoadMore">Afficher '+Math.min(60,filtered.length-visible.length)+' de plus</button>');
+  if($('historyLoadMoreV217'))$('historyLoadMoreV217').onclick=()=>{azHistoryLimitV217+=60;renderHistoryV217();wireLessonCards()};
+}
+function renderFavoritesV217(){
+  const box=$('favoritesList');if(!box)return;
+  const favs=lessons.filter(l=>favorites.has(Number(l.id))),visible=favs.slice(0,azFavoritesLimitV217);
+  box.innerHTML=visible.map(l=>lessonCard(l)).join('')||'<div class="card cardPad small">Aucun favori pour le moment.</div>';
+  if(favs.length>visible.length)box.insertAdjacentHTML('beforeend','<button id="favoritesLoadMoreV217" class="btn v217LoadMore">Afficher '+Math.min(60,favs.length-visible.length)+' de plus</button>');
+  if($('favoritesLoadMoreV217'))$('favoritesLoadMoreV217').onclick=()=>{azFavoritesLimitV217+=60;renderFavoritesV217();wireLessonCards()};
+}
+function renderAdminLessonsV217(){
+  const box=$('adminLessonsList');if(!box||!isAdmin())return;
+  box.innerHTML=lessons.slice(0,120).map(l=>lessonCard(l,true)).join('')+(lessons.length>120?'<div class="small v217ListNote">120 fiches affichées. Utilise la recherche/Explorer pour accéder aux autres.</div>':'');
+}
+function renderLessonLists(forceView=null){
+  const view=forceView||currentViewV217();
+  if(view==='history')renderHistoryV217();
+  if(view==='favorites')renderFavoritesV217();
+  if(view==='admin')renderAdminLessonsV217();
   wireLessonCards();
 }
 function renderProgress(){
@@ -205,3 +225,5 @@ async function openLesson(id){
     return l;
   },{subtitle:'Récupération des données techniques et des sources.'});
 }
+
+if($('historySearch'))$('historySearch').addEventListener('input',()=>{azHistoryLimitV217=60;if(currentViewV217()==='history'){renderHistoryV217();wireLessonCards()}});
