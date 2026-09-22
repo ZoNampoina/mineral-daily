@@ -964,3 +964,70 @@ body.menuOpen{overflow:hidden}
     font-size:9px;
   }
 }
+
+/* ARIZONA advanced modules v16 */
+.comparePicker{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:14px;
+}
+.compareChoice{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  border:1px solid var(--line);
+  background:var(--panel2);
+  border-radius:12px;
+  padding:10px;
+  cursor:pointer;
+}
+.compareChoice input{accent-color:var(--gold)}
+.compareChoice span{display:flex;justify-content:space-between;gap:8px;width:100%;min-width:0}
+.compareChoice small{color:var(--gold2)}
+.compareResult{margin-top:12px}
+.compareTable{min-width:760px}
+.compareTable th:first-child{position:sticky;left:0;background:var(--panel);z-index:2}
+.compareTable thead th{vertical-align:bottom}
+.compareTable thead small{display:block;color:var(--gold2);margin-top:4px}
+
+.collectionCreate{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px}
+.collectionsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.collectionCard{padding:14px}
+.collectionHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.collectionLessons{display:grid;gap:5px;margin-top:8px}
+.collectionLesson{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px;border-radius:10px;background:var(--panel2);cursor:pointer}
+.collectionLesson:hover{outline:1px solid var(--gold)}
+.collectionLesson small{color:var(--gold2);margin-left:5px}
+.plainIcon{border:0;background:transparent;color:var(--gold2);font-size:20px;cursor:pointer;padding:3px 5px}
+.plainIcon:hover{color:var(--gold)}
+
+.personalGrid{display:grid;grid-template-columns:1.4fr .8fr;gap:10px}
+.noteTextarea{min-height:130px}
+
+.reviewHero{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.reviewQuestion{padding:18px;margin-top:12px}
+.reviewOptions{display:grid;gap:8px;margin-top:12px}
+.reviewOption{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:12px;padding:12px;text-align:left;cursor:pointer}
+.reviewOption:hover{border-color:var(--gold)}
+.reviewOption:disabled{opacity:.7;cursor:default}
+.masteryCard{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px}
+.masteryTrack{height:7px;background:var(--panel2);border-radius:999px;overflow:hidden;margin:7px 0 5px}
+.masteryTrack span{display:block;height:100%;background:var(--gold2);border-radius:999px}
+
+.calcGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.calcCard{padding:16px;display:grid;gap:8px}
+.calcCard h3{margin:0 0 4px}
+.calcResult{border-top:1px solid var(--line);padding-top:10px;color:var(--gold2);font-weight:850;line-height:1.55}
+
+@media(max-width:720px){
+  .comparePicker{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .collectionsGrid,.calcGrid,.personalGrid{grid-template-columns:1fr}
+  .reviewHero{align-items:flex-start;flex-direction:column}
+  .reviewHero .btn{width:100%}
+}
+@media(max-width:420px){
+  .comparePicker{grid-template-columns:1fr}
+  .collectionCreate{grid-template-columns:1fr}
+  .masteryCard{grid-template-columns:52px minmax(0,1fr) auto;gap:8px}
+}
