@@ -104,9 +104,9 @@ function switchView(v){
 function switchAdmin(sub){document.querySelectorAll('.adminPane').forEach(e=>e.classList.add('hidden'));$('admin-'+sub).classList.remove('hidden');document.querySelectorAll('.adminSub').forEach(e=>e.classList.toggle('active',e.dataset.sub===sub))}
 $('loginBtn').onclick=signIn;$('signupBtn').onclick=signUp;$('logoutBtn').onclick=logout;
 $('themeBtn').onclick=()=>{const next=document.body.classList.contains('light')?'dark':'light';localStorage.setItem('az_theme',next);applyTheme()};
-$('openToday').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));$('todayName').onclick=()=>{switchView('history');setTimeout(()=>$('historySearch')?.focus(),80)};$('closeLesson').onclick=()=>$('lessonModal').classList.remove('open');$('modalFav').onclick=()=>activeLesson&&toggleFavorite(Number(activeLesson.id));$('editLessonBtn').onclick=()=>activeLesson&&openEdit(Number(activeLesson.id));
+$('openToday').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));$('todayName').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));if($('lessonsKpi'))$('lessonsKpi').onclick=()=>{switchView('history');setTimeout(()=>$('historySearch')?.focus(),80)};$('closeLesson').onclick=()=>$('lessonModal').classList.remove('open');$('modalFav').onclick=()=>activeLesson&&toggleFavorite(Number(activeLesson.id));$('editLessonBtn').onclick=()=>activeLesson&&openEdit(Number(activeLesson.id));
 $('historySearch').oninput=renderLessonLists;$('importBtn').onclick=importLesson;$('newLessonBtn').onclick=newLesson;$('closeEdit').onclick=()=>$('editModal').classList.remove('open');$('saveEdit').onclick=async()=>{if($('editId').value)await saveEdit();else{const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),created_by:session.user.id,updated_by:session.user.id};const {error}=await sb.from('arizona_lessons').insert(payload);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();renderAll();await loadAdmin();toast('Fiche créée.')}};$('deleteLesson').onclick=deleteLesson;
-if($('markNotificationsRead'))$('markNotificationsRead').onclick=markNotificationsRead;$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
+if($('markNotificationsRead'))$('markNotificationsRead').onclick=markNotificationsRead;$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.backTodayBtn').forEach(b=>b.onclick=()=>switchView('home'));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
 $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('lessonModal').classList.remove('open')});$('editModal').addEventListener('click',e=>{if(e.target===$('editModal'))$('editModal').classList.remove('open')});
 (async()=>{
  applyTheme();
@@ -154,16 +154,16 @@ window.addEventListener('focus',()=>{ if(session) refreshArizona(false); });
 
 // --- Menu latéral compact ARIZONA ---
 function setMenuOpen(open){
-  const panel=$('appMenu'),backdrop=$('menuBackdrop'),btn=$('menuBtn');
-  if(!panel||!backdrop||!btn) return;
+  const panel=$('appMenu'),backdrop=$('menuBackdrop'),brandBtn=$('brandMenuBtn');
+  if(!panel||!backdrop) return;
   panel.classList.toggle('open',open);
   backdrop.classList.toggle('open',open);
   panel.setAttribute('aria-hidden',String(!open));
   backdrop.setAttribute('aria-hidden',String(!open));
-  btn.setAttribute('aria-expanded',String(open));
+  if(brandBtn) brandBtn.setAttribute('aria-expanded',String(open));
   document.body.classList.toggle('menuOpen',open);
 }
-if($('menuBtn')) $('menuBtn').onclick=()=>setMenuOpen(true);
+if($('brandMenuBtn')) $('brandMenuBtn').onclick=()=>setMenuOpen(!$('appMenu').classList.contains('open'));
 if($('closeMenuBtn')) $('closeMenuBtn').onclick=()=>setMenuOpen(false);
 if($('menuBackdrop')) $('menuBackdrop').onclick=()=>setMenuOpen(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenuOpen(false)});
