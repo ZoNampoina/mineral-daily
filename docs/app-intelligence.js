@@ -39,7 +39,7 @@ function azCompleteness(l){
 }
 function azQuality(l){
   const completeness=azCompleteness(l);
-  const sources=azLessonSources(l).length;
+  const sources=azLessonSources(l).length+(typeof explicitSourcesV20==='function'?explicitSourcesV20(l.id).length:0);
   const date=new Date(l.updated_at||l.lesson_date||0).getTime();
   const ageDays=date?Math.max(0,(Date.now()-date)/86400000):9999;
   const freshness=ageDays<180?100:ageDays<365?80:ageDays<730?60:40;
@@ -122,13 +122,18 @@ function azRenderMadagascar(){
 
 function azRenderSourcePanel(l){
   const box=$('sourceQualityPanel');if(!box)return;
-  const q=azQuality(l),src=azLessonSources(l);
+  const q=azQuality(l),src=azLessonSources(l),explicit=typeof explicitSourcesV20==='function'?explicitSourcesV20(l.id):[];
   const updated=l.updated_at||l.lesson_date;
+  const explicitHtml=explicit.length?'<div class="v20PublicSources"><div class="eyebrow">Sources enregistrées</div>'+explicit.map(s=>{
+    const meta=[s.organization,typeof sourceTypeLabelV20==='function'?sourceTypeLabelV20(s.source_type):s.source_type,s.publication_year].filter(Boolean).join(' · ');
+    return '<div class="v20PublicSource"><b>'+esc(s.title)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+(s.url?'<a href="'+esc(s.url)+'" target="_blank" rel="noopener">Consulter</a>':'')+'</div>';
+  }).join('')+'</div>':'';
   box.innerHTML=
    '<div class="card azQualityCard"><div class="azQualityScore"><strong>'+q.score+'%</strong><span>'+esc(q.label)+'</span></div>'+
-   '<div class="azQualityDetails"><div><span>Complétude</span><b>'+q.completeness+'%</b></div><div><span>Sources détectées</span><b>'+q.sources+'</b></div><div><span>Fraîcheur</span><b>'+q.freshness+'%</b></div><div><span>Mise à jour</span><b>'+esc(updated?new Date(updated).toLocaleDateString('fr-FR'):'—')+'</b></div></div></div>'+
-   '<div class="card cardPad"><div class="eyebrow">Traçabilité</div><div class="small" style="margin-bottom:10px">Le score est un indicateur interne basé sur la complétude, la présence de références et la date de mise à jour. Il ne remplace pas une validation scientifique.</div>'+
-   (src.length?'<div class="azSourceList">'+src.map(s=>/^https?:/i.test(s)?'<a href="'+esc(s)+'" target="_blank" rel="noopener">'+esc(compactText(s,120))+'</a>':'<div>'+esc(compactText(s,180))+'</div>').join('')+'</div>':'<div class="small">Aucune source explicite détectée dans le texte de cette fiche.</div>')+
+   '<div class="azQualityDetails"><div><span>Complétude</span><b>'+q.completeness+'%</b></div><div><span>Sources</span><b>'+q.sources+'</b></div><div><span>Fraîcheur</span><b>'+q.freshness+'%</b></div><div><span>Mise à jour</span><b>'+esc(updated?new Date(updated).toLocaleDateString('fr-FR'):'—')+'</b></div></div></div>'+
+   '<div class="card cardPad"><div class="eyebrow">Traçabilité</div><div class="small" style="margin-bottom:10px">Les sources enregistrées sont prioritaires. Les références détectées automatiquement dans le texte restent affichées comme complément.</div>'+
+   explicitHtml+
+   (src.length?'<div class="azSourceList">'+src.map(s=>/^https?:/i.test(s)?'<a href="'+esc(s)+'" target="_blank" rel="noopener">'+esc(compactText(s,120))+'</a>':'<div>'+esc(compactText(s,180))+'</div>').join('')+'</div>':(!explicit.length?'<div class="small">Aucune source explicite ou détectée pour cette fiche.</div>':''))+
    '</div>';
 }
 
