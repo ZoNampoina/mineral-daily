@@ -181,7 +181,7 @@ function renderReviewDashboard(){
   summary.textContent=reviewed+' minéraux révisés sur '+quizLessons.length+' · maîtrise moyenne '+avg+' %.';
   box.innerHTML=quizLessons.map(l=>{
     const m=masteryFor(l);
-    return '<div class="card masteryCard"><div class="badge">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+'</div><div class="masteryTrack"><span style="width:'+m+'%"></span></div><div class="lessonDesc">'+m+' % de maîtrise</div></div><button class="plainIcon reviewOne" data-review="'+l.id+'" title="Réviser">▶</button></div>'
+    return '<div class="card masteryCard"><div class="badge">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+'</div><div class="masteryTrack"><span style="width:'+m+'%"></span></div><div class="lessonDesc">Maîtrise</div></div><div class="masteryPercent" aria-label="'+m+' pour cent de maîtrise">'+m+'%</div><button class="plainIcon reviewOne" data-review="'+l.id+'" title="Réviser">▶</button></div>'
   }).join('');
   box.querySelectorAll('.reviewOne').forEach(b=>b.onclick=()=>startReview(Number(b.dataset.review)));
 }
