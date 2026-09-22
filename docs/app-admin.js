@@ -9,30 +9,39 @@ async function importLesson(){
   if(existing)res=await sb.from('arizona_lessons').update({...parsed,structured_data:structured,data_status:'draft',updated_by:session.user.id,updated_at:new Date().toISOString()}).eq('id',existing.id);
   else res=await sb.from('arizona_lessons').insert({...parsed,structured_data:structured,data_status:'draft',created_by:session.user.id,updated_by:session.user.id});
   if(res.error)throw res.error;
-  $('importText').value='';$('importMsg').textContent='Fiche publiée.';await loadLessons();if(typeof loadArizonaV20==='function')await loadArizonaV20();renderAll();await loadAdmin();toast('Fiche synchronisée sur tous les appareils.')
+  $('importText').value='';$('importMsg').textContent='Fiche publiée.';await loadLessons();renderAll();await loadAdmin();toast('Fiche synchronisée sur tous les appareils.')
  }catch(e){$('importMsg').textContent=e.message}
 }
-function openEdit(id){
- if(!isAdmin())return;const l=lessons.find(x=>Number(x.id)===Number(id));if(!l)return;
- $('editId').value=l.id;$('editDate').value=l.lesson_date;$('editName').value=l.name;$('editSymbol').value=compactSymbol(l);$('editImages').value=(l.image_urls||[]).join('\n');$('editRaw').value=l.raw_text;if(typeof populateV20Editor==='function')populateV20Editor(l);$('editModal').classList.add('open')
+async function openEdit(id){
+ if(!isAdmin())return;
+ const run=async()=>{
+   const l=typeof ensureLessonDetail==='function'?await ensureLessonDetail(id):lessons.find(x=>Number(x.id)===Number(id));
+   if(!l)return;
+   if(typeof loadArizonaV20==='function')await loadArizonaV20(l.id);
+   $('editId').value=l.id;$('editDate').value=l.lesson_date;$('editName').value=l.name;$('editSymbol').value=compactSymbol(l);$('editImages').value=(l.image_urls||[]).join('\n');$('editRaw').value=l.raw_text||'';if(typeof populateV20Editor==='function')populateV20Editor(l);$('editModal').classList.add('open');
+ };
+ if(typeof withLoading==='function')return withLoading('Chargement de l’éditeur…',run,{subtitle:'Récupération de la fiche complète et de ses sources.'});
+ return run();
 }
 async function saveEdit(){
  if(!isAdmin())return;const id=Number($('editId').value);const status=$('v20DataStatus')?.value||'legacy';const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),structured_data:typeof collectStructuredDataV20==='function'?collectStructuredDataV20():{},data_status:status,last_verified_at:status==='verified'?new Date().toISOString():null,updated_by:session.user.id,updated_at:new Date().toISOString()};
- const {error}=await sb.from('arizona_lessons').update(payload).eq('id',id);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();if(typeof loadArizonaV20==='function')await loadArizonaV20();renderAll();await loadAdmin();toast('Fiche modifiée et version précédente archivée.')
+ const {error}=await sb.from('arizona_lessons').update(payload).eq('id',id);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();renderAll();await loadAdmin();toast('Fiche modifiée et version précédente archivée.')
 }
 async function deleteLesson(){
  if(!isAdmin())return;const id=Number($('editId').value),l=lessons.find(x=>Number(x.id)===id);if(!confirm('Supprimer définitivement la fiche '+(l?.name||'')+' ?'))return;
- const {error}=await sb.from('arizona_lessons').delete().eq('id',id);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();if(typeof loadArizonaV20==='function')await loadArizonaV20();renderAll();await loadAdmin();toast('Fiche supprimée.')
+ const {error}=await sb.from('arizona_lessons').delete().eq('id',id);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();renderAll();await loadAdmin();toast('Fiche supprimée.')
 }
 function newLesson(){
  const today=new Date().toISOString().slice(0,10);$('editId').value='';$('editDate').value=today;$('editName').value='';$('editSymbol').value='';$('editImages').value='';if(typeof populateV20Editor==='function')populateV20Editor({id:0,raw_text:'',structured_data:{},data_status:'draft'});$('editRaw').value=today+'\n\nNOM DU MINÉRAL\n\nRÉSUMÉ EXÉCUTIF\n\nCARACTÉRISTIQUES CHIMIQUES\nFormule :\nSymbole :\nClasse :\nNuméro atomique :\nComposition :\nÉléments associés / impuretés :\nSystème cristallin :\nValence / états d’oxydation :\nRéactivité :\nAutres propriétés chimiques importantes :\n\nCARACTÉRISTIQUES PHYSIQUES\nCouleur :\nÉclat :\nDureté (Mohs) :\nDensité :\nTrait :\nClivage :\nFracture :\nTénacité :\nMagnétisme :\nConductivité :\nPoint de fusion :\nAutres :'; $('editModal').classList.add('open')
 }
 async function loadAdmin(){
  if(!isAdmin())return;
+ const loadToken=typeof beginLoading==='function'?beginLoading('Chargement de l’administration…',{delay:80,subtitle:'Utilisateurs, activité et supervision.'}):null;
+ try{
  const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr},{data:notifs,error:nerr},{data:entities,error:eerr}]=await Promise.all([
    sb.from('profiles').select('*').order('created_at',{ascending:true}),
    sb.from('user_activity').select('*'),
-   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(1200),
+   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(400),
    sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100),
    sb.from('madagascar_entities').select('*').order('updated_at',{ascending:false}).limit(300)
  ]);
@@ -43,6 +52,7 @@ async function loadAdmin(){
  adminNotifications=notifs||[];
  adminMadagascarEntities=entities||[];
  renderAdmin()
+ }finally{if(loadToken&&typeof endLoading==='function')endLoading(loadToken)}
 }
 function renderAdmin(){
  $('adminUsers').textContent=adminUsers.length;
@@ -182,12 +192,17 @@ function renderLogs(){
    return '<tr><td data-label="Date">'+esc(date)+'</td><td data-label="Utilisateur" class="logUser">'+esc(actorLabel)+'</td><td data-label="Action"><span class="roleBadge">'+esc(l.action)+'</span></td><td data-label="Objet" class="logObject">'+esc(object)+'</td><td data-label="Détails" class="logDetails" title="'+esc(details)+'">'+esc(details)+'</td></tr>'
  }).join('')
 }
-function switchView(v){
+async function switchView(v){
  document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));
  $('view-'+v).classList.remove('hidden');
  document.querySelectorAll('#appMenu [data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
- if(v==='admin'&&isAdmin())loadAdmin();
- if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);if(typeof onArizonaIntelligenceViewChange==='function')onArizonaIntelligenceViewChange(v);if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);if(typeof onArizonaV21ViewChange==='function')onArizonaV21ViewChange(v);if(typeof onArizonaV215ViewChange==='function')onArizonaV215ViewChange(v);
+ if(['history','favorites','admin'].includes(v)&&typeof renderLessonLists==='function')renderLessonLists(v);
+ if(v==='admin'&&isAdmin())await loadAdmin();
+ if(typeof onArizonaViewChange==='function')await onArizonaViewChange(v);
+ if(typeof onArizonaIntelligenceViewChange==='function')await onArizonaIntelligenceViewChange(v);
+ if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);
+ if(typeof onArizonaV21ViewChange==='function')await onArizonaV21ViewChange(v);
+ if(typeof onArizonaV215ViewChange==='function')await onArizonaV215ViewChange(v);
  if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
 function switchAdmin(sub){
@@ -205,7 +220,7 @@ if($('saveProfileName'))$('saveProfileName').onclick=saveProfileDisplayName;
 if($('profileDisplayName'))$('profileDisplayName').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveProfileDisplayName()}};
 if($('profileModal'))$('profileModal').addEventListener('click',e=>{if(e.target===$('profileModal'))$('profileModal').classList.remove('open')});
 $('openToday').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));$('todayName').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));if($('lessonsKpi'))$('lessonsKpi').onclick=()=>{switchView('history');setTimeout(()=>$('historySearch')?.focus(),80)};if($('favoritesKpi'))$('favoritesKpi').onclick=()=>switchView('favorites');$('closeLesson').onclick=()=>$('lessonModal').classList.remove('open');$('modalFav').onclick=()=>activeLesson&&toggleFavorite(Number(activeLesson.id));$('editLessonBtn').onclick=()=>activeLesson&&openEdit(Number(activeLesson.id));
-$('historySearch').oninput=renderLessonLists;$('importBtn').onclick=importLesson;$('newLessonBtn').onclick=newLesson;$('closeEdit').onclick=()=>$('editModal').classList.remove('open');$('saveEdit').onclick=async()=>{if($('editId').value)await saveEdit();else{const status=$('v20DataStatus')?.value||'draft';const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),structured_data:typeof collectStructuredDataV20==='function'?collectStructuredDataV20():{},data_status:status,last_verified_at:status==='verified'?new Date().toISOString():null,created_by:session.user.id,updated_by:session.user.id};const {error}=await sb.from('arizona_lessons').insert(payload);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();if(typeof loadArizonaV20==='function')await loadArizonaV20();renderAll();await loadAdmin();toast('Fiche créée.')}};$('deleteLesson').onclick=deleteLesson;
+$('historySearch').oninput=renderLessonLists;$('importBtn').onclick=importLesson;$('newLessonBtn').onclick=newLesson;$('closeEdit').onclick=()=>$('editModal').classList.remove('open');$('saveEdit').onclick=async()=>{if($('editId').value)await saveEdit();else{const status=$('v20DataStatus')?.value||'draft';const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),structured_data:typeof collectStructuredDataV20==='function'?collectStructuredDataV20():{},data_status:status,last_verified_at:status==='verified'?new Date().toISOString():null,created_by:session.user.id,updated_by:session.user.id};const {error}=await sb.from('arizona_lessons').insert(payload);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();renderAll();await loadAdmin();toast('Fiche créée.')}};$('deleteLesson').onclick=deleteLesson;
 if($('markNotificationsRead'))$('markNotificationsRead').onclick=()=>markNotificationsRead(false);if($('refreshAdminAnalytics'))$('refreshAdminAnalytics').onclick=async()=>{await loadAdmin();toast('Statistiques actualisées.');};$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#appMenu [data-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.backTodayBtn').forEach(b=>b.onclick=()=>switchView('home'));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
 $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('lessonModal').classList.remove('open')});$('editModal').addEventListener('click',e=>{if(e.target===$('editModal'))$('editModal').classList.remove('open')});
 (async()=>{
@@ -217,24 +232,25 @@ $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('
 
 // --- Synchronisation automatique + raccourcis administrateur ---
 async function refreshArizona(showToast=false){
-  if(!session) return;
+  if(!session)return;
+  const view=typeof currentViewV217==='function'?currentViewV217():'home';
+  const token=typeof beginLoading==='function'?beginLoading(showToast?'Synchronisation ARIZONA…':'Synchronisation…',{soft:!showToast,delay:showToast?0:260,subtitle:'Mise à jour des données utiles à l’écran actuel.'}):null;
   try{
     setSync('Synchronisation…',false);
-    const before=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
-    await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
-    if(typeof loadArizonaV20==='function')await loadArizonaV20();
-    if(typeof loadArizonaV21==='function')await loadArizonaV21();
-    if(typeof loadArizonaV215==='function')await loadArizonaV215();
-    renderAll();
-    if(isAdmin()) await loadAdmin();
-    const after=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
+    const before=lessons.length?String(lessons[0].updated_at||'')+'|'+String(lessons[0].id||''):'';
+    if(typeof syncCoreV217==='function')await syncCoreV217(true);
+    else await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
+    if((view==='madagascar'||view==='knowledge')&&typeof loadArizonaV21==='function')await loadArizonaV21(true);
+    if(view==='projects'&&typeof loadArizonaV215==='function')await loadArizonaV215(true);
+    if(view==='admin'&&isAdmin())await loadAdmin();
+    if(view==='history'||view==='favorites'||view==='admin')renderLessonLists(view);
+    const after=lessons.length?String(lessons[0].updated_at||'')+'|'+String(lessons[0].id||''):'';
     setSync('Synchronisé',true);
-    if(showToast) toast(before!==after ? 'Nouvelle fiche récupérée.' : 'ARIZONA est à jour.');
+    if(showToast)toast(before!==after?'Nouvelles données récupérées.':'ARIZONA est à jour.');
   }catch(e){
-    console.error(e);
-    setSync('Erreur synchro',false);
-    if(showToast) toast('Synchronisation impossible : '+e.message);
-  }
+    console.error(e);setSync('Erreur synchro',false);
+    if(showToast)toast('Synchronisation impossible : '+e.message);
+  }finally{if(token&&typeof endLoading==='function')endLoading(token)}
 }
 
 if($('refreshBtn')) $('refreshBtn').onclick=()=>refreshArizona(true);
@@ -250,9 +266,14 @@ if($('quickImportBtn')) $('quickImportBtn').onclick=()=>{
 };
 
 // Vérifie le cloud automatiquement : utile si la fiche quotidienne arrive pendant que l'app est déjà ouverte.
-setInterval(()=>{ if(session) refreshArizona(false); }, 60000);
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden && session) refreshArizona(false); });
-window.addEventListener('focus',()=>{ if(session) refreshArizona(false); });
+setInterval(()=>{if(session)refreshArizona(false)},300000);
+function refreshOnReturnV217(){
+  if(!session)return;
+  const stale=typeof azLastCoreRefresh!=='undefined'?Date.now()-azLastCoreRefresh>90000:true;
+  if(stale)refreshArizona(false);
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshOnReturnV217()});
+window.addEventListener('focus',refreshOnReturnV217);
 
 
 // --- Menu latéral compact ARIZONA ---

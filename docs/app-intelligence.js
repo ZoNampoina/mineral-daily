@@ -55,7 +55,8 @@ function azRenderDashboard(){
   const recent=azRecentViewed.map(id=>lessons.find(l=>Number(l.id)===Number(id))).filter(Boolean).slice(0,4);
   const due=lessons.filter(l=>{
     const s=reviewStats?.get?.(Number(l.id));
-    return parseQuiz(l.raw_text).length && (!s?.next_review_at || new Date(s.next_review_at).getTime()<=Date.now());
+    const hasQuiz=typeof lessonHasQuizV217==='function'?lessonHasQuizV217(l):parseQuiz(l.raw_text).length>0;
+    return hasQuiz && (!s?.next_review_at || new Date(s.next_review_at).getTime()<=Date.now());
   }).sort((a,b)=>masteryFor(a)-masteryFor(b)).slice(0,4);
   const mg=lessons.filter(azHasMadagascar);
   const notesCount=typeof userNotes!=='undefined'?userNotes.size:0;
@@ -140,11 +141,13 @@ function azRenderSourcePanel(l){
 
 function renderArizonaIntelligence(){
   azRenderDashboard();
-  azRenderExplorer();
   if(activeLesson)azRenderSourcePanel(activeLesson);
 }
-function onArizonaIntelligenceViewChange(view){
-  if(view==='explorer')azRenderExplorer();
+async function onArizonaIntelligenceViewChange(view){
+  if(view==='explorer'){
+    if(typeof ensureAllLessonDetails==='function')await withLoading('Chargement de l’Explorer…',()=>ensureAllLessonDetails(),{subtitle:'Chargement des contenus nécessaires à la recherche avancée.'});
+    azRenderExplorer();
+  }
   if(view==='madagascar'){if(typeof renderMadagascarV21==='function')renderMadagascarV21();else azRenderMadagascar()}
   if(view==='home')azRenderDashboard();
 }

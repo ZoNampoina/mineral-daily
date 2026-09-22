@@ -1,5 +1,5 @@
 
-let lessonSourcesV20=[];
+let lessonSourcesV20=[];let v20SourceLessonsLoaded=new Set();
 
 function v20Trim(v){return String(v??'').replace(/\s+/g,' ').trim()}
 function v20Obj(v){return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
@@ -60,11 +60,24 @@ function v20NonEmptyCount(obj){
 function v20StatusLabel(status){
   return ({legacy:'Héritée',draft:'Brouillon',verified:'Vérifiée',needs_review:'À revoir'})[status]||'Héritée';
 }
-async function loadArizonaV20(){
+async function loadArizonaV20(lessonId=null,force=false){
   if(!session)return;
-  const {data,error}=await sb.from('lesson_sources').select('*').order('created_at',{ascending:true});
-  if(error){console.warn('V20 sources',error);lessonSourcesV20=[]}
-  else lessonSourcesV20=data||[];
+  const id=Number(lessonId||0);
+  if(id&&!force&&v20SourceLessonsLoaded.has(id))return;
+  const token=typeof beginLoading==='function'?beginLoading('Chargement des sources…',{soft:true,delay:180,subtitle:'Traçabilité documentaire de la fiche.'}):null;
+  try{
+    let q=sb.from('lesson_sources').select('*').order('created_at',{ascending:true});
+    if(id)q=q.eq('lesson_id',id);
+    const {data,error}=await q;
+    if(error){console.warn('V20 sources',error);return}
+    if(id){
+      lessonSourcesV20=lessonSourcesV20.filter(s=>Number(s.lesson_id)!==id).concat(data||[]);
+      v20SourceLessonsLoaded.add(id);
+    }else{
+      lessonSourcesV20=data||[];
+      v20SourceLessonsLoaded=new Set(lessonSourcesV20.map(s=>Number(s.lesson_id)));
+    }
+  }finally{if(token&&typeof endLoading==='function')endLoading(token)}
 }
 function explicitSourcesV20(lessonId){
   return lessonSourcesV20.filter(s=>Number(s.lesson_id)===Number(lessonId));

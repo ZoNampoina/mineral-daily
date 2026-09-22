@@ -35,10 +35,16 @@ function renderExtras(){
   if(activeLesson)renderLessonExtras(activeLesson);
 }
 
-function onArizonaViewChange(view){
-  if(view==='compare')renderComparePicker();
+async function onArizonaViewChange(view){
+  if(view==='compare'){
+    if(typeof ensureAllLessonDetails==='function')await withLoading('Chargement du comparateur…',()=>ensureAllLessonDetails(),{subtitle:'Préparation des données techniques.'});
+    renderComparePicker();
+  }
   if(view==='collections')renderCollections();
-  if(view==='review')renderReviewDashboard();
+  if(view==='review'){
+    if(typeof ensureAllLessonDetails==='function')await withLoading('Chargement de la révision…',()=>ensureAllLessonDetails(),{subtitle:'Préparation des quiz et niveaux de maîtrise.'});
+    renderReviewDashboard();
+  }
 }
 
 function renderLessonExtras(l){
@@ -175,7 +181,7 @@ function masteryFor(l){
 }
 function renderReviewDashboard(){
   const summary=$('reviewSummary'),box=$('reviewMasteryList');if(!summary||!box)return;
-  const quizLessons=lessons.filter(l=>parseQuiz(l.raw_text).length);
+  const quizLessons=lessons.filter(l=>typeof lessonHasQuizV217==='function'?lessonHasQuizV217(l):parseQuiz(l.raw_text).length);
   const reviewed=quizLessons.filter(l=>reviewStats.has(Number(l.id))).length;
   const avg=reviewed?Math.round(quizLessons.reduce((a,l)=>a+masteryFor(l),0)/quizLessons.length):0;
   summary.textContent=reviewed+' minéraux révisés sur '+quizLessons.length+' · maîtrise moyenne '+avg+' %.';
@@ -187,7 +193,7 @@ function renderReviewDashboard(){
 }
 
 function chooseReviewLesson(){
-  const quizLessons=lessons.filter(l=>parseQuiz(l.raw_text).length);
+  const quizLessons=lessons.filter(l=>typeof lessonHasQuizV217==='function'?lessonHasQuizV217(l):parseQuiz(l.raw_text).length);
   if(!quizLessons.length)return null;
   const now=Date.now();
   return [...quizLessons].sort((a,b)=>{
@@ -199,9 +205,10 @@ function chooseReviewLesson(){
   })[0];
 }
 
-function startReview(forcedId=null){
-  const l=forcedId?lessons.find(x=>Number(x.id)===Number(forcedId)):chooseReviewLesson();
+async function startReview(forcedId=null){
+  let l=forcedId?lessons.find(x=>Number(x.id)===Number(forcedId)):chooseReviewLesson();
   if(!l)return toast('Aucun quiz disponible.');
+  if(typeof ensureLessonDetail==='function')l=await withLoading('Chargement de la révision…',()=>ensureLessonDetail(l.id),{subtitle:'Préparation du quiz.'});
   const qs=parseQuiz(l.raw_text);if(!qs.length)return toast('Aucun quiz disponible pour cette fiche.');
   const q=qs[Math.floor(Math.random()*qs.length)];
   const box=$('reviewSession');
