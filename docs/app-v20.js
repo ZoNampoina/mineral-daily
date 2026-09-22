@@ -152,8 +152,9 @@ function sourceTypeLabelV20(t){
 function sourceCardsV20(lessonId){
   return explicitSourcesV20(lessonId).map(s=>{
     const meta=[s.organization,sourceTypeLabelV20(s.source_type),s.publication_year].filter(Boolean).join(' · ');
+    const safeUrl=/^https?:\/\//i.test(String(s.url||''))?s.url:'';
     return '<div class="v20SourceCard"><div><b>'+esc(s.title)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+
-      (s.url?'<a href="'+esc(s.url)+'" target="_blank" rel="noopener">Ouvrir la source</a>':'')+
+      (safeUrl?'<a href="'+esc(safeUrl)+'" target="_blank" rel="noopener">Ouvrir la source</a>':'')+
       (s.data_scope?.length?'<small>Données : '+esc(s.data_scope.join(', '))+'</small>':'')+
       '</div>'+(isAdmin()?'<button class="plainIcon v20DeleteSource" data-source="'+s.id+'" title="Supprimer">×</button>':'')+'</div>';
   }).join('');
@@ -168,10 +169,12 @@ async function addSourceV20(){
   const lessonId=Number($('editId')?.value||0);if(!lessonId)return toast('Enregistre d’abord la fiche.');
   const title=v20Trim($('v20SourceTitle')?.value||'');if(!title)return toast('Le titre de la source est requis.');
   const scopes=v20Trim($('v20SourceScope')?.value||'').split(',').map(v20Trim).filter(Boolean);
+  const rawUrl=v20Trim($('v20SourceUrl')?.value||'');
+  if(rawUrl&&!/^https?:\/\//i.test(rawUrl))return toast('L’URL doit commencer par http:// ou https://');
   const payload={
     lesson_id:lessonId,title,
     organization:v20Trim($('v20SourceOrg')?.value||'')||null,
-    url:v20Trim($('v20SourceUrl')?.value||'')||null,
+    url:rawUrl||null,
     source_type:$('v20SourceType')?.value||'web',
     publication_year:Number($('v20SourceYear')?.value||0)||null,
     accessed_at:new Date().toISOString().slice(0,10),
