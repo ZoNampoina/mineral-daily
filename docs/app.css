@@ -212,3 +212,47 @@ body.menuOpen{overflow:hidden}
 @media(max-width:390px){
   .appMenu{width:92vw}
 }
+
+/* Header alignment: brand left, sync/menu hard-right */
+.compactTopbar{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  width:100%;
+  gap:16px;
+}
+.compactTopbar .brandBlock{
+  justify-self:start;
+  min-width:0;
+}
+.compactHeaderActions{
+  justify-self:end;
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:9px;
+  flex:0 0 auto;
+}
+@media(max-width:620px){
+  .compactTopbar{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    width:100%;
+    gap:8px;
+  }
+  .compactTopbar .brandBlock{
+    width:auto;
+    min-width:0;
+    justify-self:start;
+  }
+  .compactHeaderActions{
+    width:auto;
+    min-width:max-content;
+    justify-self:end;
+    margin-left:auto;
+    justify-content:flex-end;
+    gap:7px;
+  }
+}
