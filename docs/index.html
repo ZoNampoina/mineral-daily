@@ -19,7 +19,7 @@
     <div class="eyebrow">Compte personnel</div><h1 style="margin:8px 0 3px">Connexion</h1>
     <p class="small">Retrouve les mêmes fiches, favoris et résultats sur tous tes appareils.</p>
     <input id="email" class="input" type="email" autocomplete="email" placeholder="Adresse e-mail">
-    <div class="passwordWrap"><input id="password" class="input passwordInput" type="password" autocomplete="current-password" placeholder="Mot de passe"><button id="togglePassword" class="passwordToggle" type="button" aria-label="Afficher le mot de passe" title="Afficher le mot de passe">◉</button></div>
+    <div class="passwordWrap"><input id="password" class="input passwordInput" type="password" autocomplete="current-password" placeholder="Mot de passe"><label class="passwordCheck" title="Afficher ou masquer le mot de passe"><input id="togglePassword" type="checkbox"><span>Afficher</span></label></div>
     <div class="grid2" style="margin-top:10px"><button id="loginBtn" class="btn primary">Se connecter</button><button id="signupBtn" class="btn">Créer le compte</button></div>
     <div id="authMsg" class="small" style="margin-top:10px"></div>
   </div>
@@ -78,12 +78,12 @@
   <div class="sectionTitle">Images réelles</div><div id="homeGallery" class="gallery"></div>
 </section>
 
-<section id="view-history" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button">← Aujourd’hui</button></div><div class="searchRow"><input id="historySearch" class="input" placeholder="Rechercher un minéral…"></div><div id="historyList" class="list"></div></section>
-<section id="view-favorites" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button">← Aujourd’hui</button></div><div id="favoritesList" class="list"></div></section>
-<section id="view-progress" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button">← Aujourd’hui</button></div><div class="card cardPad"><div class="eyebrow">Progression</div><h2>Quiz minéralogie & ingénierie</h2><div id="progressSummary" class="summary"></div></div><div class="sectionTitle">Résultats</div><div id="progressList" class="list"></div></section>
+<section id="view-history" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div class="searchRow"><input id="historySearch" class="input" placeholder="Rechercher un minéral…"></div><div id="historyList" class="list"></div></section>
+<section id="view-favorites" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div id="favoritesList" class="list"></div></section>
+<section id="view-progress" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div class="card cardPad"><div class="eyebrow">Progression</div><h2>Quiz minéralogie & ingénierie</h2><div id="progressSummary" class="summary"></div></div><div class="sectionTitle">Résultats</div><div id="progressList" class="list"></div></section>
 
 <section id="view-admin" class="view hidden">
-  <div class="viewBackRow"><button class="btn backTodayBtn" type="button">← Aujourd’hui</button></div>
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div>
   <div class="adminStats"><div class="card adminStat"><strong id="adminUsers">0</strong><span class="small">utilisateurs</span></div><div class="card adminStat"><strong id="adminLessons">0</strong><span class="small">fiches</span></div><div class="card adminStat"><strong id="adminImports">0</strong><span class="small">imports / créations</span></div><div class="card adminStat"><strong id="adminRecent">0</strong><span class="small">actions récentes</span></div></div>
   <div class="tabs" style="margin-top:14px"><button class="tab adminSub active" data-sub="users">Utilisateurs</button><button class="tab adminSub" data-sub="notifications">Notifications <span id="notificationBadge" class="notificationBadge hidden">0</span></button><button class="tab adminSub" data-sub="lessons">Fiches</button><button class="tab adminSub" data-sub="logs">Journal d’activité</button></div>
   <div id="admin-users" class="adminPane">
@@ -107,12 +107,12 @@
 </div></div>
 
 <div id="lessonModal" class="modal"><div class="modalPanel">
-  <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden">Modifier</button><button id="closeLesson" class="btn">Fermer</button></div></div>
+  <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden">Modifier</button><button id="closeLesson" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div></div>
   <div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="detailSectionHead"><div class="sectionTitle">Détails techniques</div><div class="detailTools"><button id="expandAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=true})">Tout afficher</button><button id="collapseAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=false})">Tout réduire</button></div></div><div id="modalDetails" class="detailGrid"></div><div class="sectionTitle">Quiz</div><div id="modalQuiz"></div>
 </div></div>
 
 <div id="editModal" class="modal"><div class="modalPanel" style="height:min(92vh,900px)">
-  <div class="modalHead"><h2 style="margin:0">Édition administrateur</h2><button id="closeEdit" class="btn">Fermer</button></div><input id="editId" type="hidden">
+  <div class="modalHead"><h2 style="margin:0">Édition administrateur</h2><button id="closeEdit" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div><input id="editId" type="hidden">
   <div class="grid2"><div><div class="small">Date</div><input id="editDate" class="input" type="date"></div><div><div class="small">Nom</div><input id="editName" class="input"></div></div>
   <div class="grid2" style="margin-top:8px"><div><div class="small">Symbole</div><input id="editSymbol" class="input" maxlength="12"></div><div><div class="small">Images personnalisées (URLs, séparées par ligne)</div><textarea id="editImages" class="textarea" style="min-height:95px"></textarea></div></div>
   <div class="small" style="margin-top:9px">Texte complet de la fiche</div><textarea id="editRaw" class="textarea" style="min-height:360px"></textarea>
