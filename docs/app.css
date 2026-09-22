@@ -783,3 +783,66 @@ body.menuOpen{overflow:hidden}
   .passwordWrap .passwordInput{padding-right:98px !important}
   .passwordCheck{right:7px;font-size:9px;padding:5px}
 }
+
+/* ARIZONA control refinement v14 */
+.iconCloseBtn,
+.backTodayBtn,
+.favBtn,
+.favToggle,
+#editLessonBtn,
+.editLesson{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:var(--text) !important;
+  padding:4px 6px !important;
+  min-width:auto !important;
+  height:auto !important;
+  border-radius:0 !important;
+}
+.iconCloseBtn{
+  font-size:25px !important;
+  line-height:1 !important;
+}
+.backTodayBtn{
+  font-size:27px !important;
+  line-height:1 !important;
+}
+.favBtn,
+.favToggle{
+  font-size:25px !important;
+  line-height:1 !important;
+  color:var(--gold2) !important;
+}
+#editLessonBtn,
+.editLesson{
+  font-size:13px !important;
+  font-weight:850 !important;
+  color:var(--gold2) !important;
+  text-decoration:none !important;
+}
+.iconCloseBtn:hover,
+.backTodayBtn:hover,
+.favBtn:hover,
+.favToggle:hover,
+#editLessonBtn:hover,
+.editLesson:hover{
+  color:var(--gold) !important;
+  transform:scale(1.08);
+}
+.iconCloseBtn:focus-visible,
+.backTodayBtn:focus-visible,
+.favBtn:focus-visible,
+.favToggle:focus-visible,
+#editLessonBtn:focus-visible,
+.editLesson:focus-visible{
+  outline:2px solid var(--gold) !important;
+  outline-offset:4px !important;
+  border-radius:6px !important;
+}
+@media(max-width:620px){
+  .iconCloseBtn{font-size:23px !important}
+  .backTodayBtn{font-size:25px !important}
+  .favBtn,.favToggle{font-size:23px !important}
+  #editLessonBtn,.editLesson{font-size:12px !important}
+}
