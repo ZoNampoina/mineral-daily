@@ -1289,3 +1289,49 @@ body.menuOpen{overflow:hidden}
   .masteryCard .badge{width:44px;height:44px;min-width:44px;font-size:16px}
   .masteryPercent{width:42px;min-width:42px;font-size:11px}
 }
+
+
+/* === ARIZONA V20 · données structurées, sources, versions === */
+.v20DataMeta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.v20DerivedChip{border-style:dashed}
+#structuredDataPanel{display:grid;gap:10px}
+.v20DataBlock{padding:14px}
+.v20DataGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+.v20DataItem{display:grid;gap:2px;padding:9px 10px;border-radius:11px;background:rgba(127,127,127,.055);border:1px solid var(--line)}
+.v20DataItem span{font-size:10px;color:var(--muted)}
+.v20DataItem b{font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+
+.v20EditorSection{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.v20EditorSection h3{margin:5px 0 8px}
+.v20EditorHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.v20EditorGrid{margin-top:10px}
+.v20SmallTextarea{min-height:92px}
+.v20SourceList{display:grid;gap:7px;margin:10px 0}
+.v20SourceCard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:10px 11px}
+.v20SourceCard>div{display:grid;gap:3px}
+.v20SourceCard b{font-size:12px}
+.v20SourceCard small{font-size:10px;color:var(--muted)}
+.v20SourceCard a{font-size:10px;color:var(--gold2);text-decoration:none}
+.v20SourceCard a:hover{text-decoration:underline}
+.v20SourceForm{display:grid;grid-template-columns:1.2fr 1fr;gap:8px}
+.v20SourceForm .v20SmallTextarea,.v20SourceForm #v20AddSourceBtn{grid-column:1/-1}
+.v20VersionList{display:grid;gap:7px;margin-top:9px}
+.v20VersionRow{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.v20VersionRow>div{display:grid;gap:2px}
+.v20VersionRow b{font-size:12px}
+.v20VersionRow small{font-size:10px;color:var(--muted)}
+.v20RestoreVersion{padding:7px 9px;font-size:10px}
+.v20PublicSources{display:grid;gap:7px;margin:10px 0 12px}
+.v20PublicSource{display:grid;gap:3px;padding:9px 10px;border-radius:10px;background:rgba(127,127,127,.06);border:1px solid var(--line)}
+.v20PublicSource b{font-size:12px}
+.v20PublicSource small{font-size:10px;color:var(--muted)}
+.v20PublicSource a{font-size:10px;color:var(--gold2);text-decoration:none}
+
+@media(max-width:620px){
+ .v20DataGrid{grid-template-columns:1fr}
+ .v20EditorHead{flex-direction:column}
+ .v20EditorHead .btn{width:100%}
+ .v20SourceForm{grid-template-columns:1fr}
+ .v20SourceForm .v20SmallTextarea,.v20SourceForm #v20AddSourceBtn{grid-column:auto}
+ .v20VersionRow{align-items:flex-start}
+}
