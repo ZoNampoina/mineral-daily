@@ -146,8 +146,8 @@ function onArizonaIntelligenceViewChange(view){
 function renderLessonIntelligence(l){ azRenderSourcePanel(l); }
 
 azLoadRecent();
-if($('smartSearch'))$('smartSearch').oninput=azRenderExplorer;
-if($('smartScope'))$('smartScope').onchange=azRenderExplorer;
+if($('smartSearch'))$('smartSearch').oninput=()=>{azRenderExplorer();if(typeof scheduleSearchAudit==='function')scheduleSearchAudit($('smartSearch').value,'explorer',$('smartScope')?.value||'all')};
+if($('smartScope'))$('smartScope').onchange=()=>{azRenderExplorer();if(typeof scheduleSearchAudit==='function')scheduleSearchAudit($('smartSearch')?.value||'','explorer',$('smartScope').value)};
 if($('smartMadagascarOnly'))$('smartMadagascarOnly').onchange=azRenderExplorer;
 if($('smartFavoritesOnly'))$('smartFavoritesOnly').onchange=azRenderExplorer;
-if($('madagascarSearch'))$('madagascarSearch').oninput=azRenderMadagascar;
+if($('madagascarSearch'))$('madagascarSearch').oninput=()=>{azRenderMadagascar();if(typeof scheduleSearchAudit==='function')scheduleSearchAudit($('madagascarSearch').value,'madagascar','madagascar')};
