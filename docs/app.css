@@ -381,3 +381,201 @@ body.menuOpen{overflow:hidden}
     flex:0 0 42px !important;
   }
 }
+
+/* ARIZONA UI refinement v10 */
+
+/* Clean header: aligned with page content on desktop, full usable width on Android */
+.compactTopbar{
+  position:relative !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-height:58px !important;
+  margin:0 0 16px 0 !important;
+  padding:0 !important;
+  left:auto !important;
+  right:auto !important;
+  transform:none !important;
+  gap:12px !important;
+}
+.compactTopbar .brandBlock{
+  position:static !important;
+  justify-self:start !important;
+  min-width:0 !important;
+  margin:0 !important;
+}
+.compactHeaderActions{
+  position:static !important;
+  justify-self:end !important;
+  align-self:center !important;
+  margin:0 !important;
+  padding:0 !important;
+  right:auto !important;
+  left:auto !important;
+  top:auto !important;
+  transform:none !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:12px !important;
+}
+.syncMini{flex:0 0 12px !important}
+.menuBtn{
+  width:44px !important;
+  height:44px !important;
+  flex:0 0 44px !important;
+  border-radius:13px !important;
+}
+
+/* Home mineral becomes a navigation affordance */
+.todayMineralBtn{
+  display:inline-block;
+  padding:0;
+  margin:10px 0 5px;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+  cursor:pointer;
+  transition:color .18s ease,transform .18s ease;
+}
+.todayMineralBtn:hover{color:var(--gold2);transform:translateX(2px)}
+.todayMineralBtn:focus-visible{outline:2px solid var(--gold);outline-offset:5px;border-radius:6px}
+
+/* Animated day/night icon */
+.themeToggleIcon{
+  position:relative;
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  background:var(--panel2);
+  display:grid;
+  place-items:center;
+  color:var(--gold2);
+  overflow:hidden;
+}
+.themeToggleIcon .sunGlyph,
+.themeToggleIcon .moonGlyph{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  font-size:19px;
+  transition:opacity .32s ease,transform .42s cubic-bezier(.2,.8,.2,1);
+}
+.themeToggleIcon .sunGlyph{opacity:1;transform:rotate(0deg) scale(1)}
+.themeToggleIcon .moonGlyph{opacity:0;transform:rotate(-110deg) scale(.45)}
+.themeAction.isLight .sunGlyph{opacity:0;transform:rotate(110deg) scale(.45)}
+.themeAction.isLight .moonGlyph{opacity:1;transform:rotate(0deg) scale(1)}
+.themeAction:active .themeToggleIcon{transform:scale(.92)}
+.themeToggleIcon{transition:transform .18s ease}
+
+/* Progress cards: action stays on the same row */
+.progressCard{
+  display:grid;
+  grid-template-columns:62px minmax(0,1fr) auto;
+  gap:13px;
+  align-items:center;
+  padding:12px;
+}
+.progressCard .lessonMain{min-width:0}
+.progressOpenBtn{white-space:nowrap;align-self:center}
+
+/* Login logo centered for both themes */
+.loginHero{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.loginHero .logo{
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+
+/* Admin notifications */
+.notificationBadge{
+  display:inline-grid;
+  place-items:center;
+  min-width:18px;
+  height:18px;
+  padding:0 5px;
+  margin-left:5px;
+  border-radius:999px;
+  background:var(--red);
+  color:white;
+  font-size:9px;
+  font-weight:950;
+  vertical-align:middle;
+}
+.notificationHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.notificationItem{
+  display:grid;
+  grid-template-columns:12px minmax(0,1fr);
+  align-items:start;
+  gap:11px;
+  padding:14px;
+}
+.notificationDot{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--muted);
+  margin-top:6px;
+}
+.notificationItem.unread .notificationDot{
+  background:var(--gold2);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--gold2) 14%,transparent);
+}
+.deleteUserBtn:disabled{opacity:.35;cursor:not-allowed}
+
+@media(max-width:620px){
+  .compactTopbar{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    min-height:54px !important;
+    width:100% !important;
+    margin:0 0 12px 0 !important;
+    padding:0 !important;
+    gap:8px !important;
+  }
+  .compactHeaderActions{
+    position:static !important;
+    justify-self:end !important;
+    margin:0 !important;
+    gap:11px !important;
+    transform:none !important;
+  }
+  .compactTopbar .brandBlock{max-width:calc(100vw - 92px)}
+  .compactTopbar .brandName{font-size:14px}
+  .compactTopbar .logo{width:44px;height:44px}
+  .menuBtn{width:40px !important;height:40px !important;flex-basis:40px !important}
+  .syncMini,.syncMini::before{width:11px !important;height:11px !important;min-width:11px !important}
+  .progressCard{
+    grid-template-columns:52px minmax(0,1fr) auto;
+    gap:9px;
+    padding:10px;
+  }
+  .progressCard .badge{
+    width:52px;height:52px;min-width:52px;
+    font-size:19px;
+  }
+  .progressCard .lessonTitle{font-size:15px}
+  .progressCard .lessonDesc{white-space:normal}
+  .progressOpenBtn{padding:8px 9px;font-size:11px}
+  .notificationHeader{align-items:flex-start;flex-direction:column}
+  .notificationHeader .btn{width:100%}
+}
+@media(max-width:360px){
+  .progressCard{
+    grid-template-columns:46px minmax(0,1fr) auto;
+    gap:7px;
+  }
+  .progressCard .badge{width:46px;height:46px;min-width:46px;font-size:17px}
+  .progressOpenBtn{padding:7px 8px;font-size:10px}
+}
