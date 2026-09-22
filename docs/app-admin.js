@@ -201,6 +201,7 @@ async function refreshArizona(showToast=false){
     setSync('Synchronisation…',false);
     const before=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
     await Promise.all([loadLessons(),loadFavorites(),loadProgress()]);
+    if(typeof loadArizonaV20==='function')await loadArizonaV20();
     renderAll();
     if(isAdmin()) await loadAdmin();
     const after=lessons.length ? String(lessons[0].lesson_date)+'|'+String(lessons[0].name) : '';
