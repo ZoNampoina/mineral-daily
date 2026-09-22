@@ -23,7 +23,6 @@
     <div class="grid2" style="margin-top:10px"><button id="loginBtn" class="btn primary">Se connecter</button><button id="signupBtn" class="btn">Créer le compte</button></div>
     <div id="authMsg" class="small" style="margin-top:10px"></div>
   </div>
-  <p class="small" style="text-align:center;margin-top:12px">Le premier compte créé devient Administrateur. Les suivants sont Standard.</p>
 </div>
 
 <div id="appView" class="hidden"><div class="shell">
@@ -58,7 +57,7 @@
   <div class="menuStack">
     <button id="refreshBtn" class="menuAction" type="button"><span>↻</span><span><b>Actualiser</b><small>Vérifier les nouvelles fiches</small></span></button>
     <button id="quickImportBtn" class="menuAction adminOnly hidden" type="button"><span>＋</span><span><b>Importer la fiche du jour</b><small>Ajout manuel administrateur</small></span></button>
-    <button id="themeBtn" class="menuAction" type="button"><span class="menuThemeIcon">☼</span><span><b>Mode jour / nuit</b><small>Changer l’apparence</small></span></button>
+    <button id="themeBtn" class="menuAction themeAction" type="button"><span class="themeToggleIcon" aria-hidden="true"><span class="sunGlyph">☀</span><span class="moonGlyph">☾</span></span><span><b>Mode jour / nuit</b><small>Changer l’apparence</small></span></button>
   </div>
 
   <div class="menuSectionLabel">Compte</div>
@@ -74,7 +73,7 @@
 <main>
 <section id="view-home" class="view">
   <div class="dashboard">
-    <article class="card hero"><div><div class="eyebrow">Fiche la plus récente</div><div class="heroMain"><div><div id="todayName" class="mineralName">—</div><div id="todayDate" class="date"></div></div><div id="todaySymbol" class="symbol"></div></div><div id="todaySummary" class="summary"></div></div><div style="margin-top:18px"><button id="openToday" class="btn primary">Ouvrir la fiche complète</button></div></article>
+    <article class="card hero"><div><div class="eyebrow">Fiche du jour</div><div class="heroMain"><div><button id="todayName" class="mineralName todayMineralBtn" type="button" title="Afficher l’historique">—</button><div id="todayDate" class="date"></div></div><div id="todaySymbol" class="symbol"></div></div><div id="todaySummary" class="summary"></div></div><div style="margin-top:18px"><button id="openToday" class="btn primary">Ouvrir la fiche complète</button></div></article>
     <div class="kpis"><div class="card kpi"><strong id="countLessons">0</strong><span>fiches techniques</span></div><div class="card kpi"><strong id="countFav">0</strong><span>favoris</span></div><div class="card kpi"><strong id="avgQuiz">—</strong><span>moyenne quiz</span></div><div class="card kpi"><strong id="cloudKpi">✓</strong><span>synchronisation cloud</span></div></div>
   </div>
   <div class="sectionTitle">Images réelles</div><div id="homeGallery" class="gallery"></div>
@@ -86,10 +85,14 @@
 
 <section id="view-admin" class="view hidden">
   <div class="adminStats"><div class="card adminStat"><strong id="adminUsers">0</strong><span class="small">utilisateurs</span></div><div class="card adminStat"><strong id="adminLessons">0</strong><span class="small">fiches</span></div><div class="card adminStat"><strong id="adminImports">0</strong><span class="small">imports / créations</span></div><div class="card adminStat"><strong id="adminRecent">0</strong><span class="small">actions récentes</span></div></div>
-  <div class="tabs" style="margin-top:14px"><button class="tab adminSub active" data-sub="users">Utilisateurs</button><button class="tab adminSub" data-sub="lessons">Fiches</button><button class="tab adminSub" data-sub="logs">Journal d’activité</button></div>
+  <div class="tabs" style="margin-top:14px"><button class="tab adminSub active" data-sub="users">Utilisateurs</button><button class="tab adminSub" data-sub="notifications">Notifications <span id="notificationBadge" class="notificationBadge hidden">0</span></button><button class="tab adminSub" data-sub="lessons">Fiches</button><button class="tab adminSub" data-sub="logs">Journal d’activité</button></div>
   <div id="admin-users" class="adminPane">
     <div class="card cardPad"><div class="small">Identifiants visibles : e-mail et UUID uniquement. Les mots de passe, hashes, tokens et clés secrètes ne sont jamais accessibles.</div></div>
-    <div class="sectionTitle">Comptes</div><div class="tableWrap"><table><thead><tr><th>E-mail</th><th>UUID</th><th>Rôle</th><th>Créé</th><th>Dernière activité</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+    <div class="sectionTitle">Comptes</div><div class="tableWrap"><table><thead><tr><th>E-mail</th><th>UUID</th><th>Rôle</th><th>Créé</th><th>Dernière activité</th><th>Action</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+  </div>
+  <div id="admin-notifications" class="adminPane hidden">
+    <div class="card cardPad notificationHeader"><div><div class="eyebrow">Connexions Standard</div><div class="small">Une notification apparaît ici lorsqu’un utilisateur Standard se connecte.</div></div><button id="markNotificationsRead" class="btn">Tout marquer comme lu</button></div>
+    <div id="notificationsList" class="list" style="margin-top:12px"></div>
   </div>
   <div id="admin-lessons" class="adminPane hidden">
     <div class="card cardPad"><div class="eyebrow">Ajouter / importer</div><p class="small">Colle la fiche professionnelle complète. La date et le nom sont détectés automatiquement. Même date + même nom = mise à jour, sinon nouvelle fiche.</p><textarea id="importText" class="textarea" placeholder="Colle la fiche complète ici…"></textarea><div class="grid2" style="margin-top:10px"><button id="importBtn" class="btn primary">Importer et publier</button><button id="newLessonBtn" class="btn">Nouvelle fiche vide</button></div><div id="importMsg" class="small" style="margin-top:8px"></div></div>
