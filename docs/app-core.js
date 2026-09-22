@@ -102,7 +102,7 @@ async function loadFavorites(){const {data,error}=await sb.from('user_favorites'
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
 
 function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress()}
-function applyTheme(){const theme=localStorage.getItem('az_theme')||'dark';document.body.classList.toggle('light',theme==='light');$('themeBtn').textContent=theme==='light'?'☾':'☼'}
+function applyTheme(){const theme=localStorage.getItem('az_theme')||'dark';document.body.classList.toggle('light',theme==='light');const b=$('themeBtn');if(b){b.classList.toggle('isLight',theme==='light');b.title=theme==='light'?'Passer en mode nuit':'Passer en mode jour'}}
 function renderHome(){
  const l=lessons[0];$('countLessons').textContent=lessons.length;$('countFav').textContent=favorites.size;
  const scores=[...progress.values()].map(x=>Number(x.score||0));$('avgQuiz').textContent=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)+'/3':'—';
@@ -165,5 +165,5 @@ async function submitQuiz(l,qs){
 function renderProgress(){
  const done=progress.size,total=lessons.filter(l=>parseQuiz(l.raw_text).length).length;const scores=[...progress.values()].map(x=>Number(x.score||0));const avg=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):'—';
  $('progressSummary').textContent=done+' quiz réalisés sur '+total+'. Score moyen : '+avg+'/3.';
- $('progressList').innerHTML=lessons.map(l=>{const p=progress.get(Number(l.id));return '<div class="card lessonCard"><div class="badge">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+'</div><div class="lessonDesc">'+(p?'Meilleur score : '+p.score+'/3':'Quiz non réalisé')+'</div></div><button class="btn" data-open="'+l.id+'">'+(p?'Revoir':'Commencer')+'</button></div>'}).join('');document.querySelectorAll('#progressList [data-open]').forEach(b=>b.onclick=()=>openLesson(Number(b.dataset.open)))
+ $('progressList').innerHTML=lessons.map(l=>{const p=progress.get(Number(l.id));return '<div class="card progressCard"><div class="badge">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+'</div><div class="lessonDesc">'+(p?'Meilleur score : '+p.score+'/3':'Quiz non réalisé')+'</div></div><button class="btn progressOpenBtn" data-open="'+l.id+'">'+(p?'Revoir':'Commencer')+'</button></div>'}).join('');document.querySelectorAll('#progressList [data-open]').forEach(b=>b.onclick=()=>openLesson(Number(b.dataset.open)))
 }
