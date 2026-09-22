@@ -115,6 +115,18 @@ async function ensureLessonDetail(id,force=false){
   cacheLessonDetailV217(l);
   return l;
 }
+async function requestLessonDataV218(id,opts={}){
+  const n=Number(id);if(!n)return null;
+  const title=opts.title||'Chargement du minerai…';
+  const subtitle=opts.subtitle||'Récupération des données techniques nécessaires.';
+  const run=async()=>{
+    const l=await ensureLessonDetail(n,!!opts.force);
+    if(opts.sources&&typeof loadArizonaV20==='function')await loadArizonaV20(n,!!opts.force);
+    return l;
+  };
+  if(opts.loading===false||typeof withLoading!=='function')return run();
+  return withLoading(title,run,{delay:Number.isFinite(opts.delay)?opts.delay:80,subtitle,soft:!!opts.soft});
+}
 async function ensureLessonDetails(ids){
   const unique=[...new Set((ids||[]).map(Number).filter(Boolean))];
   return Promise.all(unique.map(id=>ensureLessonDetail(id)));
