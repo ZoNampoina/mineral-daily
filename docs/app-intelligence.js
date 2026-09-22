@@ -141,12 +141,12 @@ function azRenderSourcePanel(l){
 function renderArizonaIntelligence(){
   azRenderDashboard();
   azRenderExplorer();
-  azRenderMadagascar();
+  if(typeof renderMadagascarV21==='function')renderMadagascarV21();else azRenderMadagascar();
   if(activeLesson)azRenderSourcePanel(activeLesson);
 }
 function onArizonaIntelligenceViewChange(view){
   if(view==='explorer')azRenderExplorer();
-  if(view==='madagascar')azRenderMadagascar();
+  if(view==='madagascar'){if(typeof renderMadagascarV21==='function')renderMadagascarV21();else azRenderMadagascar()}
   if(view==='home')azRenderDashboard();
 }
 function renderLessonIntelligence(l){ azRenderSourcePanel(l); }

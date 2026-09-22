@@ -128,16 +128,28 @@ function populateV20Editor(l){
   loadVersionsV20(l.id);
 }
 function collectStructuredDataV20(){
-  const val=id=>v20Trim($(id)?.value||'');
+  const val=id=>v20Trim($(id)?.value||''),raw=String($('editRaw')?.value||'');
   return {
     schema_version:1,
     identity:{formula:val('v20Formula'),class:val('v20Class'),crystal_system:val('v20Crystal')},
-    physical:{hardness_mohs:val('v20Hardness'),density:val('v20Density')},
-    geology:{deposit_types:val('v20DepositTypes'),associated_minerals:val('v20Associated')},
-    mining:{summary:val('v20Mining')},
-    processing:{summary:val('v20Processing')},
-    economy:{price:val('v20Price'),price_unit:val('v20PriceUnit')},
-    madagascar:{summary:val('v20Madagascar')}
+    physical:{
+      hardness_mohs:val('v20Hardness'),density:val('v20Density'),
+      magnetism:v20Val(raw,'CARACTÉRISTIQUES PHYSIQUES','Magnétisme'),
+      conductivity:v20Val(raw,'CARACTÉRISTIQUES PHYSIQUES','Conductivité')
+    },
+    geology:{
+      summary:v20Trim(section(raw,'GÉOLOGIE ET GENÈSE')),
+      deposit_types:val('v20DepositTypes'),associated_minerals:val('v20Associated')
+    },
+    mining:{summary:val('v20Mining')||v20Trim(section(raw,'EXPLOITATION'))},
+    processing:{summary:val('v20Processing')||v20Trim(section(raw,'TRAITEMENT / MINÉRALURGIE'))},
+    economy:{
+      market_summary:v20Trim(section(raw,'MARCHÉ INTERNATIONAL')),
+      price:val('v20Price'),price_unit:val('v20PriceUnit'),
+      production:v20Trim(section(raw,'PRODUCTION ANNUELLE'))
+    },
+    uses:{summary:v20Trim(section(raw,'USAGES'))},
+    madagascar:{summary:val('v20Madagascar')||v20Trim(section(raw,'MADAGASCAR'))}
   };
 }
 function extractEditorFromRawV20(){
