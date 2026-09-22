@@ -29,10 +29,12 @@ function newLesson(){
 }
 async function loadAdmin(){
  if(!isAdmin())return;
+ const loadToken=typeof beginLoading==='function'?beginLoading('Chargement de l’administration…',{delay:80,subtitle:'Utilisateurs, activité et supervision.'}):null;
+ try{
  const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr},{data:notifs,error:nerr},{data:entities,error:eerr}]=await Promise.all([
    sb.from('profiles').select('*').order('created_at',{ascending:true}),
    sb.from('user_activity').select('*'),
-   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(1200),
+   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(400),
    sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100),
    sb.from('madagascar_entities').select('*').order('updated_at',{ascending:false}).limit(300)
  ]);
@@ -43,6 +45,7 @@ async function loadAdmin(){
  adminNotifications=notifs||[];
  adminMadagascarEntities=entities||[];
  renderAdmin()
+ }finally{if(loadToken&&typeof endLoading==='function')endLoading(loadToken)}
 }
 function renderAdmin(){
  $('adminUsers').textContent=adminUsers.length;
@@ -182,12 +185,17 @@ function renderLogs(){
    return '<tr><td data-label="Date">'+esc(date)+'</td><td data-label="Utilisateur" class="logUser">'+esc(actorLabel)+'</td><td data-label="Action"><span class="roleBadge">'+esc(l.action)+'</span></td><td data-label="Objet" class="logObject">'+esc(object)+'</td><td data-label="Détails" class="logDetails" title="'+esc(details)+'">'+esc(details)+'</td></tr>'
  }).join('')
 }
-function switchView(v){
+async function switchView(v){
  document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden'));
  $('view-'+v).classList.remove('hidden');
  document.querySelectorAll('#appMenu [data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===v));
- if(v==='admin'&&isAdmin())loadAdmin();
- if(typeof onArizonaViewChange==='function')onArizonaViewChange(v);if(typeof onArizonaIntelligenceViewChange==='function')onArizonaIntelligenceViewChange(v);if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);if(typeof onArizonaV21ViewChange==='function')onArizonaV21ViewChange(v);if(typeof onArizonaV215ViewChange==='function')onArizonaV215ViewChange(v);
+ if(['history','favorites','admin'].includes(v)&&typeof renderLessonLists==='function')renderLessonLists(v);
+ if(v==='admin'&&isAdmin())await loadAdmin();
+ if(typeof onArizonaViewChange==='function')await onArizonaViewChange(v);
+ if(typeof onArizonaIntelligenceViewChange==='function')await onArizonaIntelligenceViewChange(v);
+ if(typeof onEngineerViewChange==='function')onEngineerViewChange(v);
+ if(typeof onArizonaV21ViewChange==='function')await onArizonaV21ViewChange(v);
+ if(typeof onArizonaV215ViewChange==='function')await onArizonaV215ViewChange(v);
  if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
 function switchAdmin(sub){
