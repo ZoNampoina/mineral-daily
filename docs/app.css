@@ -283,3 +283,101 @@ body.menuOpen{overflow:hidden}
     margin:0;
   }
 }
+
+/* Final full-width header layout */
+.compactTopbar{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  width:100vw !important;
+  max-width:none !important;
+  min-height:64px;
+  margin-left:calc(50% - 50vw) !important;
+  margin-right:calc(50% - 50vw) !important;
+  margin-bottom:14px !important;
+  padding-left:max(16px, env(safe-area-inset-left)) !important;
+  padding-right:max(16px, env(safe-area-inset-right)) !important;
+  gap:12px !important;
+}
+.compactTopbar .brandBlock{
+  position:static !important;
+  justify-self:auto !important;
+  flex:0 1 auto !important;
+  min-width:0 !important;
+}
+.compactHeaderActions{
+  position:static !important;
+  right:auto !important;
+  top:auto !important;
+  transform:none !important;
+  margin-left:auto !important;
+  justify-self:auto !important;
+  flex:0 0 auto !important;
+  min-width:auto !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:10px !important;
+}
+
+/* Synchronisation status: dot only */
+.syncMini{
+  display:block !important;
+  width:13px !important;
+  height:13px !important;
+  min-width:13px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  font-size:0 !important;
+  line-height:0 !important;
+  overflow:visible !important;
+}
+.syncMini::before{
+  content:"" !important;
+  display:block !important;
+  width:13px !important;
+  height:13px !important;
+  border-radius:50% !important;
+  background:#8d96a0 !important;
+  box-shadow:0 0 0 4px rgba(141,150,160,.13) !important;
+}
+.syncMini.synced::before,
+.syncMini.ok::before{
+  background:#39c98a !important;
+  box-shadow:0 0 0 4px rgba(57,201,138,.13) !important;
+}
+.syncMini.error::before{
+  background:#e35f5f !important;
+  box-shadow:0 0 0 4px rgba(227,95,95,.13) !important;
+}
+
+@media(max-width:620px){
+  .compactTopbar{
+    min-height:58px !important;
+    padding-left:max(10px, env(safe-area-inset-left)) !important;
+    padding-right:max(10px, env(safe-area-inset-right)) !important;
+    gap:8px !important;
+  }
+  .compactHeaderActions{
+    position:static !important;
+    transform:none !important;
+    margin-left:auto !important;
+    gap:10px !important;
+  }
+  .syncMini,
+  .syncMini::before{
+    width:12px !important;
+    height:12px !important;
+    min-width:12px !important;
+  }
+  .menuBtn{
+    width:42px !important;
+    height:42px !important;
+    flex:0 0 42px !important;
+  }
+}
