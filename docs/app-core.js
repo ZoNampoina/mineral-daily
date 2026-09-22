@@ -125,6 +125,39 @@ function setSync(t,ok){
  el.title=label;
  el.setAttribute('aria-label',label);
 }
+function profileDisplayName(){
+ const name=String(profile?.display_name||'').trim();
+ return name||'Utilisateur';
+}
+function renderProfileIdentity(){
+ const name=profileDisplayName(),role=isAdmin()?'Administrateur':'Standard';
+ if($('drawerDisplayName'))$('drawerDisplayName').textContent=name;
+ if($('drawerRole'))$('drawerRole').textContent=role;
+ if($('userInitial'))$('userInitial').textContent=(name.charAt(0)||'U').toLocaleUpperCase('fr-FR');
+ if($('profileDisplayName'))$('profileDisplayName').value=name;
+}
+function openProfileEditor(){
+ if(!profile)return;
+ renderProfileIdentity();
+ $('profileModal')?.classList.add('open');
+ setTimeout(()=>$('profileDisplayName')?.select(),40);
+}
+async function saveProfileDisplayName(){
+ if(!session||!profile)return;
+ const input=$('profileDisplayName');
+ const name=String(input?.value||'').replace(/\s+/g,' ').trim();
+ if(!name){toast('Le nom ne peut pas être vide.');input?.focus();return}
+ if(name.length>50){toast('Le nom est limité à 50 caractères.');return}
+ const btn=$('saveProfileName');if(btn)btn.disabled=true;
+ const {data,error}=await sb.from('profiles').update({display_name:name}).eq('user_id',session.user.id).select('*').single();
+ if(btn)btn.disabled=false;
+ if(error)return toast('Modification impossible : '+error.message);
+ profile=data||{...profile,display_name:name};
+ renderProfileIdentity();
+ $('profileModal')?.classList.remove('open');
+ if(isAdmin()&&typeof loadAdmin==='function')await loadAdmin();
+ toast('Nom utilisateur mis à jour.');
+}
 async function loadProfile(){
  for(let i=0;i<8;i++){
    const {data,error}=await sb.from('profiles').select('*').eq('user_id',session.user.id).maybeSingle();
@@ -132,7 +165,7 @@ async function loadProfile(){
    if(error)console.warn(error);await new Promise(r=>setTimeout(r,350));
  }
  if(!profile)throw new Error('Profil utilisateur non initialisé.');
- $('roleBadge').textContent=profile.role==='admin'?'Administrateur':'Standard';
+ renderProfileIdentity();
  document.querySelectorAll('.adminOnly').forEach(e=>e.classList.toggle('hidden',!isAdmin()));
  const editBtn=$('editLessonBtn');if(editBtn&&!isAdmin())editBtn.remove();
 }
@@ -159,7 +192,12 @@ async function loadFavorites(){const {data,error}=await sb.from('user_favorites'
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
 
 function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence()}
-function applyTheme(){const theme=localStorage.getItem('az_theme')||'dark';document.body.classList.toggle('light',theme==='light');const b=$('themeBtn');if(b){b.classList.toggle('isLight',theme==='light');b.title=theme==='light'?'Passer en mode nuit':'Passer en mode jour'}}
+function applyTheme(){
+ const theme=localStorage.getItem('az_theme')||'dark',isLight=theme==='light';
+ document.body.classList.toggle('light',isLight);
+ const b=$('logoThemeBtn');
+ if(b){b.classList.toggle('isLight',isLight);b.title=isLight?'Passer en mode nuit':'Passer en mode jour';b.setAttribute('aria-label',b.title)}
+}
 function renderHome(){
  const l=lessons[0];$('countLessons').textContent=lessons.length;$('countFav').textContent=favorites.size;
  const scores=[...progress.values()].map(x=>Number(x.score||0));$('avgQuiz').textContent=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)+'/3':'—';

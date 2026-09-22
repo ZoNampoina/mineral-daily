@@ -1144,3 +1144,27 @@ body.menuOpen{overflow:hidden}
  .engineerHeroActions{justify-content:flex-start}
  .engineerNavGrid{grid-template-columns:repeat(2,1fr)}
 }
+
+
+/* === ARIZONA V19.1 · identité utilisateur === */
+.logoThemeBtn{border:0;background:transparent;padding:0;margin:0;display:grid;place-items:center;cursor:pointer;border-radius:16px}
+.logoThemeBtn:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.logoThemeBtn .logo{display:block}
+.menuIdentityBar{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px;align-items:stretch;margin:-7px 0 15px}
+.userProfileBtn{min-width:0;display:grid;grid-template-columns:38px minmax(0,1fr) 26px;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:14px;padding:9px 10px;text-align:left;cursor:pointer}
+.userProfileBtn:hover{border-color:var(--gold)}
+.userInitial{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--panel2);color:var(--gold2);font-weight:950;font-size:16px}
+.userIdentityText{min-width:0;display:grid;gap:2px}
+.userIdentityText b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.userIdentityText small{font-size:10px;color:var(--muted)}
+.userEditGlyph{display:grid;place-items:center;color:var(--muted);font-size:14px}
+.logoutIconBtn{width:44px;min-width:44px;padding:0;display:grid;place-items:center;border-radius:14px}
+.logoutIconBtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.profileModalPanel{width:min(480px,calc(100% - 22px));background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 22px 70px rgba(0,0,0,.35)}
+.profileEditorCard{display:grid;gap:10px}
+.profileHelp{margin-top:-3px}
+@media(max-width:620px){
+ .menuIdentityBar{grid-template-columns:minmax(0,1fr) 42px}
+ .logoutIconBtn{width:42px;min-width:42px}
+ .profileModalPanel{width:calc(100% - 16px);padding:15px}
+}
