@@ -1,6 +1,6 @@
 
 /* ARIZONA V21.7 · Performance Core */
-const AZ_CORE_CACHE_VERSION=217;
+const AZ_CORE_CACHE_VERSION=218;
 let azLessonDetailCache=new Map();
 let azLoadingSeq=0,azLoadingJobs=new Map(),azLoaderTimer=null;
 let azLastCoreRefresh=0,azCoreRefreshPromise=null;
