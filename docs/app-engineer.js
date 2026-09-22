@@ -11,7 +11,7 @@ async function hydrateEngineerSelectionV218(){
   box.innerHTML='<div class="card cardPad small">Chargement des données techniques…</div>';
   try{
     if(typeof requestLessonDataV218==='function'){
-      await requestLessonDataV218(id,{title:'Chargement du minerai…',subtitle:'Préparation du dossier Mode Ingénieur.'});
+      await requestLessonDataV218(id,{title:'Chargement du minerai…',subtitle:'Préparation du dossier Mode Ingénieur.',sources:true});
     }else if(typeof ensureLessonDetail==='function')await ensureLessonDetail(id);
     if(seq!==engineerHydrationSeqV218||Number(sel.value)!==id)return;
     renderEngineerWorkspace();
