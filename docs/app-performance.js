@@ -137,6 +137,23 @@ async function syncCoreV217(render=true){
   })();
   try{await azCoreRefreshPromise}finally{azCoreRefreshPromise=null}
 }
+async function signIn(){
+  return withLoading('Connexion…',async()=>{
+    const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+    if(error){$('authMsg').textContent=error.message;return}
+    session=data.session;await enterApp();
+  },{delay:0,subtitle:'Vérification du compte et ouverture de votre espace.'});
+}
+async function signUp(){
+  const email=$('email').value.trim(),password=$('password').value;
+  if(!email||!password){$('authMsg').textContent='E-mail et mot de passe requis.';return}
+  return withLoading('Création du compte…',async()=>{
+    const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.href.split('#')[0]}});
+    if(error){$('authMsg').textContent=error.message;return}
+    if(data.session){session=data.session;await enterApp()}
+    else $('authMsg').textContent='Compte créé. Confirme l’e-mail reçu, puis reviens ici et connecte-toi.';
+  },{delay:0,subtitle:'Création sécurisée de votre profil ARIZONA.'});
+}
 async function enterApp(){
   $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');setSync('Préparation…',false);
   await withLoading('Ouverture d’ARIZONA…',async()=>{
