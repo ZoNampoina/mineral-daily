@@ -75,7 +75,16 @@ async function enterApp(){
  if(isAdmin())await loadAdmin();
  setSync('Synchronisé',true);
 }
-function setSync(t,ok){$('syncStatus').textContent=t;$('syncStatus').className='status '+(ok?'ok':'')}
+function setSync(t,ok){
+ const el=$('syncStatus');if(!el)return;
+ const label=String(t||'Synchronisation');
+ const isError=!ok && /(erreur|impossible|non synchron)/i.test(label);
+ const state=ok?'synced':(isError?'error':'syncing');
+ el.textContent='';
+ el.className='status syncMini '+state;
+ el.title=label;
+ el.setAttribute('aria-label',label);
+}
 async function loadProfile(){
  for(let i=0;i<8;i++){
    const {data,error}=await sb.from('profiles').select('*').eq('user_id',session.user.id).maybeSingle();
