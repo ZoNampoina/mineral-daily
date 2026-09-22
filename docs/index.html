@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="description" content="ARIZONA — connaissances professionnelles sur les minéraux et l'ingénierie minière.">
+<title>arizona-mineral.mg</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+<div id="loginView" class="shell loginWrap">
+  <div class="loginHero"><img class="logo" src="./icon.svg" alt="ARIZONA"><div class="brandName">arizona-mineral.mg</div><div class="brandTag">1 + 1 = 2</div></div>
+  <div class="card cardPad">
+    <div class="eyebrow">Compte personnel</div><h1 style="margin:8px 0 3px">Connexion</h1>
+    <p class="small">Retrouve les mêmes fiches, favoris et résultats sur tous tes appareils.</p>
+    <input id="email" class="input" type="email" autocomplete="email" placeholder="Adresse e-mail">
+    <input id="password" class="input" type="password" autocomplete="current-password" placeholder="Mot de passe" style="margin-top:9px">
+    <div class="grid2" style="margin-top:10px"><button id="loginBtn" class="btn primary">Se connecter</button><button id="signupBtn" class="btn">Créer le compte</button></div>
+    <div id="authMsg" class="small" style="margin-top:10px"></div>
+  </div>
+  <p class="small" style="text-align:center;margin-top:12px">Le premier compte créé devient Administrateur. Les suivants sont Standard.</p>
+</div>
+
+<div id="appView" class="hidden"><div class="shell">
+<header class="topbar">
+  <div class="brandBlock"><img class="logo" src="./icon.svg" alt="ARIZONA"><div style="min-width:0"><div class="brandName">arizona-mineral.mg</div><div class="brandTag">1 + 1 = 2</div></div></div>
+  <div class="topActions"><span id="syncStatus" class="status">Cloud</span><span id="roleBadge" class="roleBadge">Standard</span><button id="themeBtn" class="btn iconBtn" title="Thème">☼</button><button id="logoutBtn" class="btn">Quitter</button></div>
+</header>
+
+<nav class="tabs" id="mainTabs">
+  <button class="tab active" data-view="home">Aujourd’hui</button><button class="tab" data-view="history">Historique</button><button class="tab" data-view="favorites">Favoris</button><button class="tab" data-view="progress">Progression</button><button class="tab adminOnly hidden" data-view="admin">Administration</button>
+</nav>
+
+<main>
+<section id="view-home" class="view">
+  <div class="dashboard">
+    <article class="card hero"><div><div class="eyebrow">Fiche la plus récente</div><div class="heroMain"><div><div id="todayName" class="mineralName">—</div><div id="todayDate" class="date"></div></div><div id="todaySymbol" class="symbol"></div></div><div id="todaySummary" class="summary"></div></div><div style="margin-top:18px"><button id="openToday" class="btn primary">Ouvrir la fiche complète</button></div></article>
+    <div class="kpis"><div class="card kpi"><strong id="countLessons">0</strong><span>fiches techniques</span></div><div class="card kpi"><strong id="countFav">0</strong><span>favoris</span></div><div class="card kpi"><strong id="avgQuiz">—</strong><span>moyenne quiz</span></div><div class="card kpi"><strong id="cloudKpi">✓</strong><span>synchronisation cloud</span></div></div>
+  </div>
+  <div class="sectionTitle">Images réelles</div><div id="homeGallery" class="gallery"></div>
+</section>
+
+<section id="view-history" class="view hidden"><div class="searchRow"><input id="historySearch" class="input" placeholder="Rechercher un minéral…"></div><div id="historyList" class="list"></div></section>
+<section id="view-favorites" class="view hidden"><div id="favoritesList" class="list"></div></section>
+<section id="view-progress" class="view hidden"><div class="card cardPad"><div class="eyebrow">Progression</div><h2>Quiz minéralogie & ingénierie</h2><div id="progressSummary" class="summary"></div></div><div class="sectionTitle">Résultats</div><div id="progressList" class="list"></div></section>
+
+<section id="view-admin" class="view hidden">
+  <div class="adminStats"><div class="card adminStat"><strong id="adminUsers">0</strong><span class="small">utilisateurs</span></div><div class="card adminStat"><strong id="adminLessons">0</strong><span class="small">fiches</span></div><div class="card adminStat"><strong id="adminImports">0</strong><span class="small">imports / créations</span></div><div class="card adminStat"><strong id="adminRecent">0</strong><span class="small">actions récentes</span></div></div>
+  <div class="tabs" style="margin-top:14px"><button class="tab adminSub active" data-sub="users">Utilisateurs</button><button class="tab adminSub" data-sub="lessons">Fiches</button><button class="tab adminSub" data-sub="logs">Journal d’activité</button></div>
+  <div id="admin-users" class="adminPane">
+    <div class="card cardPad"><div class="small">Identifiants visibles : e-mail et UUID uniquement. Les mots de passe, hashes, tokens et clés secrètes ne sont jamais accessibles.</div></div>
+    <div class="sectionTitle">Comptes</div><div class="tableWrap"><table><thead><tr><th>E-mail</th><th>UUID</th><th>Rôle</th><th>Créé</th><th>Dernière activité</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+  </div>
+  <div id="admin-lessons" class="adminPane hidden">
+    <div class="card cardPad"><div class="eyebrow">Ajouter / importer</div><p class="small">Colle la fiche professionnelle complète. La date et le nom sont détectés automatiquement. Même date + même nom = mise à jour, sinon nouvelle fiche.</p><textarea id="importText" class="textarea" placeholder="Colle la fiche complète ici…"></textarea><div class="grid2" style="margin-top:10px"><button id="importBtn" class="btn primary">Importer et publier</button><button id="newLessonBtn" class="btn">Nouvelle fiche vide</button></div><div id="importMsg" class="small" style="margin-top:8px"></div></div>
+    <div class="sectionTitle">Gestion des fiches</div><div id="adminLessonsList" class="list"></div>
+  </div>
+  <div id="admin-logs" class="adminPane hidden">
+    <div class="searchRow"><input id="logSearch" class="input" placeholder="Utilisateur / action / fiche…"><select id="logAction" class="select" style="max-width:180px"><option value="">Toutes actions</option><option>create</option><option>update</option><option>delete</option><option>import</option><option>login</option><option>role_change</option></select></div>
+    <div class="tableWrap"><table><thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Objet</th><th>Détails</th></tr></thead><tbody id="logsBody"></tbody></table></div>
+  </div>
+</section>
+</main>
+</div></div>
+
+<div id="lessonModal" class="modal"><div class="modalPanel">
+  <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden">Modifier</button><button id="closeLesson" class="btn">Fermer</button></div></div>
+  <div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="sectionTitle">Détails techniques</div><div id="modalDetails" class="detailGrid"></div><div class="sectionTitle">Quiz</div><div id="modalQuiz"></div>
+</div></div>
+
+<div id="editModal" class="modal"><div class="modalPanel" style="height:min(92vh,900px)">
+  <div class="modalHead"><h2 style="margin:0">Édition administrateur</h2><button id="closeEdit" class="btn">Fermer</button></div><input id="editId" type="hidden">
+  <div class="grid2"><div><div class="small">Date</div><input id="editDate" class="input" type="date"></div><div><div class="small">Nom</div><input id="editName" class="input"></div></div>
+  <div class="grid2" style="margin-top:8px"><div><div class="small">Symbole</div><input id="editSymbol" class="input" maxlength="12"></div><div><div class="small">Images personnalisées (URLs, séparées par ligne)</div><textarea id="editImages" class="textarea" style="min-height:95px"></textarea></div></div>
+  <div class="small" style="margin-top:9px">Texte complet de la fiche</div><textarea id="editRaw" class="textarea" style="min-height:360px"></textarea>
+  <div class="grid2" style="margin-top:10px"><button id="saveEdit" class="btn primary">Enregistrer</button><button id="deleteLesson" class="btn danger">Supprimer la fiche</button></div>
+</div></div>
+
+<div id="toast" class="toast"></div>
+<script src="./app-core.js"></script><script src="./app-ui.js"></script><script src="./app-admin.js"></script>
+</body>
+</html>
