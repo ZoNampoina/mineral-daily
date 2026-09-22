@@ -166,3 +166,9 @@ input,textarea,select,button{max-width:100%}
   .detailTools{width:100%}
   .detailToolBtn{flex:1 1 calc(50% - 4px)}
 }
+
+/* Dual ARIZONA logos */
+.logoLight{display:none}
+.logoDark{display:block}
+body.light .logoLight{display:block}
+body.light .logoDark{display:none}
