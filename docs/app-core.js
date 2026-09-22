@@ -131,7 +131,7 @@ async function loadLessons(){const {data,error}=await sb.from('arizona_lessons')
 async function loadFavorites(){const {data,error}=await sb.from('user_favorites').select('lesson_id').eq('user_id',session.user.id);if(error)throw error;favorites=new Set((data||[]).map(x=>Number(x.lesson_id)))}
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
 
-function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress()}
+function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence()}
 function applyTheme(){const theme=localStorage.getItem('az_theme')||'dark';document.body.classList.toggle('light',theme==='light');const b=$('themeBtn');if(b){b.classList.toggle('isLight',theme==='light');b.title=theme==='light'?'Passer en mode nuit':'Passer en mode jour'}}
 function renderHome(){
  const l=lessons[0];$('countLessons').textContent=lessons.length;$('countFav').textContent=favorites.size;
@@ -167,9 +167,9 @@ async function toggleFavorite(id){
  renderAll();if(activeLesson?.id===id)$('modalFav').textContent=favorites.has(id)?'★':'☆'
 }
 async function openLesson(id){
- const l=lessons.find(x=>Number(x.id)===Number(id));if(!l)return;activeLesson=l;$('lessonModal').classList.add('open');
+ const l=lessons.find(x=>Number(x.id)===Number(id));if(!l)return;activeLesson=l;if(typeof azTrackRecentlyViewed==='function')azTrackRecentlyViewed(id);$('lessonModal').classList.add('open');
  $('modalName').textContent=l.name+' · '+compactSymbol(l);$('modalDate').textContent=formatDate(l.lesson_date);$('modalFav').textContent=favorites.has(Number(l.id))?'★':'☆';
- $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');await fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l);if(typeof renderLessonExtras==='function')renderLessonExtras(l)
+ $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');await fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l);if(typeof renderLessonExtras==='function')renderLessonExtras(l);if(typeof renderLessonIntelligence==='function')renderLessonIntelligence(l)
 }
 function renderDetails(l){
  const raw=l.raw_text;let html='';
