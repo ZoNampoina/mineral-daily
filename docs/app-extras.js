@@ -6,8 +6,8 @@ async function loadArizonaExtras(){
   const [notesRes,colsRes,itemsRes,reviewRes]=await Promise.all([
     sb.from('user_notes').select('*').eq('user_id',session.user.id),
     sb.from('user_collections').select('*').eq('user_id',session.user.id).order('created_at',{ascending:true}),
-    sb.from('user_collection_items').select('*').eq('user_id',session.user.id),
-    sb.from('review_progress').select('*').eq('user_id',session.user.id)
+    sb.from('user_collection_lessons').select('*').eq('user_id',session.user.id),
+    sb.from('revision_stats').select('*').eq('user_id',session.user.id)
   ]);
   const err=notesRes.error||colsRes.error||itemsRes.error||reviewRes.error;
   if(err){console.warn('ARIZONA extras',err);return}
@@ -91,7 +91,7 @@ async function addActiveLessonToCollection(){
   if(!collectionId)return;
   const exists=userCollectionItems.some(x=>Number(x.collection_id)===collectionId&&Number(x.lesson_id)===Number(activeLesson.id));
   if(exists)return toast('Cette fiche est déjà dans cette collection.');
-  const {error}=await sb.from('user_collection_items').insert({collection_id:collectionId,user_id:session.user.id,lesson_id:activeLesson.id});
+  const {error}=await sb.from('user_collection_lessons').insert({collection_id:collectionId,user_id:session.user.id,lesson_id:activeLesson.id});
   if(error)return toast(error.message);
   await loadArizonaExtras();
   renderLessonExtras(activeLesson);
@@ -99,7 +99,7 @@ async function addActiveLessonToCollection(){
 }
 
 async function removeCollectionItem(collectionId,lessonId){
-  const {error}=await sb.from('user_collection_items').delete().eq('user_id',session.user.id).eq('collection_id',collectionId).eq('lesson_id',lessonId);
+  const {error}=await sb.from('user_collection_lessons').delete().eq('user_id',session.user.id).eq('collection_id',collectionId).eq('lesson_id',lessonId);
   if(error)return toast(error.message);
   await loadArizonaExtras();
 }
@@ -212,15 +212,15 @@ function startReview(forcedId=null){
 
 async function answerReview(l,q,answer){
   const correct=answer===q.answer;
-  const old=reviewStats.get(Number(l.id))||{reviews:0,correct:0,wrong:0,mastery:0};
-  const reviews=Number(old.reviews||0)+1;
-  const good=Number(old.correct||0)+(correct?1:0);
-  const wrong=Number(old.wrong||0)+(correct?0:1);
+  const old=reviewStats.get(Number(l.id))||{review_count:0,correct_count:0,wrong_count:0,mastery:0};
+  const reviews=Number(old.review_count||0)+1;
+  const good=Number(old.correct_count||0)+(correct?1:0);
+  const wrong=Number(old.wrong_count||0)+(correct?0:1);
   const accuracy=good/reviews;
   const mastery=Math.max(0,Math.min(100,Math.round(accuracy*80+Math.min(reviews,4)*5)));
   const next=new Date(Date.now()+(correct?3:1)*86400000).toISOString();
-  const payload={user_id:session.user.id,lesson_id:l.id,reviews,correct:good,wrong,mastery,last_reviewed_at:new Date().toISOString(),next_review_at:next,updated_at:new Date().toISOString()};
-  const {data,error}=await sb.from('review_progress').upsert(payload,{onConflict:'user_id,lesson_id'}).select().single();
+  const payload={user_id:session.user.id,lesson_id:l.id,review_count:reviews,correct_count:good,wrong_count:wrong,mastery,last_reviewed_at:new Date().toISOString(),next_review_at:next,updated_at:new Date().toISOString()};
+  const {data,error}=await sb.from('revision_stats').upsert(payload,{onConflict:'user_id,lesson_id'}).select().single();
   if(error)return toast(error.message);
   reviewStats.set(Number(l.id),data);
   const fb=$('reviewFeedback');
