@@ -49,6 +49,10 @@
     <button class="tab" data-view="history">Historique</button>
     <button class="tab" data-view="favorites">Favoris</button>
     <button class="tab" data-view="progress">Progression</button>
+    <button class="tab" data-view="compare">Comparer</button>
+    <button class="tab" data-view="collections">Collections</button>
+    <button class="tab" data-view="review">Révision</button>
+    <button class="tab" data-view="calculators">Calculateurs</button>
     <button class="tab adminOnly hidden" data-view="admin">Administration</button>
   </nav>
 
@@ -82,6 +86,37 @@
 <section id="view-favorites" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div id="favoritesList" class="list"></div></section>
 <section id="view-progress" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div class="card cardPad"><div class="eyebrow">Progression</div><h2>Quiz minéralogie & ingénierie</h2><div id="progressSummary" class="summary"></div></div><div class="sectionTitle">Résultats</div><div id="progressList" class="list"></div></section>
 
+
+<section id="view-compare" class="view hidden">
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
+  <div class="card cardPad"><div class="eyebrow">Comparateur</div><h2>Comparer les minéraux</h2><div class="small">Sélectionne de 2 à 4 fiches pour comparer leurs propriétés, marché et contexte minier.</div><div id="comparePicker" class="comparePicker"></div><button id="runCompare" class="btn primary" style="margin-top:12px">Comparer</button></div>
+  <div id="compareResult" class="compareResult"></div>
+</section>
+
+<section id="view-collections" class="view hidden">
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
+  <div class="card cardPad"><div class="eyebrow">Collections</div><h2>Classer mes fiches</h2><div class="collectionCreate"><input id="newCollectionName" class="input" placeholder="Nouvelle collection…"><button id="createCollectionBtn" class="btn primary">Créer</button></div></div>
+  <div id="collectionsList" class="collectionsGrid"></div>
+</section>
+
+<section id="view-review" class="view hidden">
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
+  <div class="card cardPad reviewHero"><div><div class="eyebrow">Mode Révision</div><h2>Consolider les acquis</h2><div id="reviewSummary" class="small"></div></div><button id="startReviewBtn" class="btn primary">Commencer une révision</button></div>
+  <div id="reviewSession"></div>
+  <div class="sectionTitle">Maîtrise par minéral</div><div id="reviewMasteryList" class="list"></div>
+</section>
+
+<section id="view-calculators" class="view hidden">
+  <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour" title="Retour">←</button></div>
+  <div class="card cardPad"><div class="eyebrow">Boîte à outils</div><h2>Calculateurs miniers</h2><div class="small">Calculs rapides d’ingénierie. Vérifie toujours les hypothèses avant utilisation professionnelle.</div></div>
+  <div class="calcGrid">
+    <div class="card calcCard"><h3>Métal récupéré</h3><input id="calcTonnage" class="input" type="number" step="any" placeholder="Tonnage minerai (t)"><input id="calcGrade" class="input" type="number" step="any" placeholder="Teneur (%)"><input id="calcRecovery" class="input" type="number" step="any" placeholder="Récupération (%)"><button id="calcMetalBtn" class="btn">Calculer</button><div id="calcMetalResult" class="calcResult">—</div></div>
+    <div class="card calcCard"><h3>Valeur brute théorique</h3><input id="calcMetalT" class="input" type="number" step="any" placeholder="Métal récupéré (t)"><input id="calcPrice" class="input" type="number" step="any" placeholder="Prix (USD/t)"><input id="calcFx" class="input" type="number" step="any" placeholder="USD/MGA"><button id="calcValueBtn" class="btn">Calculer</button><div id="calcValueResult" class="calcResult">—</div></div>
+    <div class="card calcCard"><h3>Dilution</h3><input id="calcOreT" class="input" type="number" step="any" placeholder="Minerai (t)"><input id="calcOreGrade" class="input" type="number" step="any" placeholder="Teneur minerai (%)"><input id="calcWasteT" class="input" type="number" step="any" placeholder="Dilution stérile (t)"><button id="calcDilutionBtn" class="btn">Calculer</button><div id="calcDilutionResult" class="calcResult">—</div></div>
+    <div class="card calcCard"><h3>Conversion de teneur</h3><input id="calcConvValue" class="input" type="number" step="any" placeholder="Valeur"><select id="calcConvUnit" class="select"><option value="percent">%</option><option value="ppm">ppm</option><option value="gpt">g/t</option></select><button id="calcConvertBtn" class="btn">Convertir</button><div id="calcConvertResult" class="calcResult">—</div></div>
+  </div>
+</section>
+
 <section id="view-admin" class="view hidden">
   <div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div>
   <div class="adminStats"><div class="card adminStat"><strong id="adminUsers">0</strong><span class="small">utilisateurs</span></div><div class="card adminStat"><strong id="adminLessons">0</strong><span class="small">fiches</span></div><div class="card adminStat"><strong id="adminImports">0</strong><span class="small">imports / créations</span></div><div class="card adminStat"><strong id="adminRecent">0</strong><span class="small">actions récentes</span></div></div>
@@ -108,7 +143,13 @@
 
 <div id="lessonModal" class="modal"><div class="modalPanel">
   <div class="modalHead"><div><div id="modalName" class="mineralName" style="font-size:34px"></div><div id="modalDate" class="date"></div></div><div style="display:flex;gap:7px"><button id="modalFav" class="btn favBtn" title="Favori">☆</button><button id="editLessonBtn" class="btn adminOnly hidden editIconBtn" type="button" aria-label="Modifier" title="Modifier">✎</button><button id="closeLesson" class="btn iconCloseBtn" type="button" aria-label="Fermer" title="Fermer">✕</button></div></div>
-  <div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="detailSectionHead"><div class="sectionTitle">Détails techniques</div><div class="detailTools"><button id="expandAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=true})">Tout afficher</button><button id="collapseAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=false})">Tout réduire</button></div></div><div id="modalDetails" class="detailGrid"></div><div class="sectionTitle">Quiz</div><div id="modalQuiz"></div>
+  <div id="modalGallery" class="gallery"></div><div id="modalSummary" class="card cardPad summary"></div><div class="detailSectionHead"><div class="sectionTitle">Détails techniques</div><div class="detailTools"><button id="expandAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=true})">Tout afficher</button><button id="collapseAllDetails" type="button" class="btn detailToolBtn" onclick="document.querySelectorAll('#modalDetails details.detailCard').forEach(function(d){d.open=false})">Tout réduire</button></div></div><div id="modalDetails" class="detailGrid"></div>
+  <div class="sectionTitle">Personnel</div>
+  <div class="personalGrid">
+    <div class="card cardPad"><div class="eyebrow">Mes notes</div><textarea id="personalNote" class="textarea noteTextarea" placeholder="Mes observations, rappels, liens avec mes projets…"></textarea><button id="savePersonalNote" class="btn" style="margin-top:8px">Enregistrer la note</button><span id="noteStatus" class="small" style="margin-left:8px"></span></div>
+    <div class="card cardPad"><div class="eyebrow">Collections</div><select id="lessonCollectionSelect" class="select"></select><button id="addLessonCollection" class="btn" style="margin-top:8px">Ajouter à la collection</button><div id="lessonCollections" class="small" style="margin-top:9px"></div></div>
+  </div>
+  <div class="sectionTitle">Quiz</div><div id="modalQuiz"></div>
 </div></div>
 
 <div id="editModal" class="modal"><div class="modalPanel" style="height:min(92vh,900px)">
@@ -120,6 +161,6 @@
 </div></div>
 
 <div id="toast" class="toast"></div>
-<script src="./app-core.js"></script><script src="./app-admin.js"></script>
+<script src="./app-core.js"></script><script src="./app-extras.js"></script><script src="./app-admin.js"></script>
 </body>
 </html>
