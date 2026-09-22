@@ -1,5 +1,6 @@
 
 let madagascarEntitiesV21=[],madagascarEntityLessonsV21=[],knowledgeRelationsV21=[];
+let arizonaV21Loaded=false,arizonaV21Loading=null;
 
 function v21Text(v){return String(v??'').replace(/\s+/g,' ').trim()}
 function v21Norm(v){return v21Text(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
@@ -18,6 +19,13 @@ async function loadArizonaV21(){
   madagascarEntitiesV21=e.data||[];
   madagascarEntityLessonsV21=l.data||[];
   knowledgeRelationsV21=r.data||[];
+  arizonaV21Loaded=true;
+}
+async function ensureArizonaV21(force=false){
+  if(arizonaV21Loaded&&!force)return;
+  if(arizonaV21Loading&&!force)return arizonaV21Loading;
+  arizonaV21Loading=loadArizonaV21().finally(()=>{arizonaV21Loading=null});
+  return arizonaV21Loading;
 }
 function v21LessonsForEntity(entityId){
   const ids=madagascarEntityLessonsV21.filter(x=>Number(x.entity_id)===Number(entityId)).map(x=>Number(x.lesson_id));
@@ -79,7 +87,7 @@ function renderMadagascarV21(){
   list.querySelectorAll('[data-v21-entity]').forEach(card=>card.onclick=e=>{if(e.target.closest('[data-v21-lesson]'))return;openMadagascarEntityV21(Number(card.dataset.v21Entity))});
   list.querySelectorAll('[data-v21-lesson]').forEach(b=>b.onclick=e=>{e.stopPropagation();openLesson(Number(b.dataset.v21Lesson))});
   renderLegacyMadagascarV21();
-  if(isAdmin())renderMadagascarAdminListV21();
+  renderMadagascarAdminListV21();
 }
 function renderLegacyMadagascarV21(){
   const box=$('madagascarLegacyList');if(!box)return;
@@ -109,10 +117,10 @@ function openMadagascarEntityV21(id){
     '</div>'+
     (e.description?'<div class="card cardPad v21EntityDescription">'+esc(e.description)+'</div>':'')+
     '<div class="sectionTitle">Substances liées</div><div class="azChips">'+(linked.length?linked.map(l=>'<button class="azChip v21ModalLesson" data-id="'+l.id+'">'+esc(l.name)+'</button>').join(''):'<span class="small">Aucune fiche liée.</span>')+'</div>'+
-    (isAdmin()?'<div class="v21ModalAdminActions"><button id="v21EditEntityBtn" class="btn">Modifier</button><button id="v21DeleteEntityBtn" class="btn danger">Supprimer</button></div>':'');
+    ((isAdmin()||e.owner_user_id===session.user.id)?'<div class="v21ModalAdminActions"><button id="v21EditEntityBtn" class="btn">Modifier</button><button id="v21DeleteEntityBtn" class="btn danger">Supprimer</button></div>':'');
   modal.classList.add('open');
   modal.querySelectorAll('.v21ModalLesson').forEach(b=>b.onclick=()=>{modal.classList.remove('open');openLesson(Number(b.dataset.id))});
-  if(isAdmin()){
+  if(isAdmin()||e.owner_user_id===session.user.id){
     $('v21EditEntityBtn').onclick=()=>{modal.classList.remove('open');populateMadagascarFormV21(e);$('v21MgAdmin')?.scrollIntoView({behavior:'smooth',block:'start'})};
     $('v21DeleteEntityBtn').onclick=()=>deleteMadagascarEntityV21(e.id);
   }
@@ -135,7 +143,6 @@ function populateMadagascarFormV21(e=null){
   if($('v21MgSaveBtn'))$('v21MgSaveBtn').textContent=e?'Mettre à jour':'Créer l’entité';
 }
 async function saveMadagascarEntityV21(){
-  if(!isAdmin())return;
   const id=Number($('v21MgId')?.value||0),name=v21Text($('v21MgName')?.value||'');
   if(!name)return toast('Le nom est requis.');
   const lat=$('v21MgLat')?.value===''?null:Number($('v21MgLat').value),lon=$('v21MgLon')?.value===''?null:Number($('v21MgLon').value);
@@ -152,7 +159,7 @@ async function saveMadagascarEntityV21(){
   if(id){
     const {error}=await sb.from('madagascar_entities').update(payload).eq('id',id);if(error)return toast(error.message);
   }else{
-    const {data,error}=await sb.from('madagascar_entities').insert({...payload,created_by:session.user.id}).select('id').single();
+    const {data,error}=await sb.from('madagascar_entities').insert({...payload,owner_user_id:session.user.id,created_by:session.user.id}).select('id').single();
     if(error)return toast(error.message);entityId=Number(data.id);
   }
   const chosen=[...document.querySelectorAll('#v21MgLinkedLessons input:checked')].map(x=>Number(x.value));
@@ -165,9 +172,9 @@ async function saveMadagascarEntityV21(){
   toast(id?'Entité Madagascar mise à jour.':'Entité Madagascar créée.');
 }
 async function deleteMadagascarEntityV21(id){
-  if(!isAdmin())return;
   const e=madagascarEntitiesV21.find(x=>Number(x.id)===Number(id));
-  if(!confirm('Supprimer '+(e?.name||'cette entité')+' ?'))return;
+  if(!e||(!isAdmin()&&e.owner_user_id!==session.user.id))return toast('Suppression non autorisée.');
+  if(!confirm('Supprimer définitivement '+(e?.name||'cette entité')+' ?'))return;
   const {error}=await sb.from('madagascar_entities').delete().eq('id',id);if(error)return toast(error.message);
   $('v21MgEntityModal')?.classList.remove('open');await loadArizonaV21();populateMadagascarFormV21();renderMadagascarV21();renderKnowledgeGraphV21();toast('Entité supprimée.');
 }
@@ -288,11 +295,14 @@ async function deleteKnowledgeRelationV21(id){
   const {error}=await sb.from('knowledge_relations').delete().eq('id',id);if(error)return toast(error.message);
   await loadArizonaV21();renderKnowledgeGraphV21();toast('Relation supprimée.');
 }
-function onArizonaV21ViewChange(view){
+async function onArizonaV21ViewChange(view){
+  if(view!=='madagascar'&&view!=='knowledge')return;
+  await ensureArizonaV21();
   if(view==='madagascar')renderMadagascarV21();
   if(view==='knowledge')renderKnowledgePickerV21();
 }
 function renderArizonaV21(){
+  if(!arizonaV21Loaded)return;
   if(!$('view-madagascar')?.classList.contains('hidden'))renderMadagascarV21();
   if(!$('view-knowledge')?.classList.contains('hidden'))renderKnowledgePickerV21();
 }
