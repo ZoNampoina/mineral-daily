@@ -1,3 +1,4 @@
+let adminNotifications=[];
 async function importLesson(){
  if(!isAdmin())return toast('Action réservée à l’administrateur.');
  try{
@@ -27,25 +28,71 @@ function newLesson(){
 }
 async function loadAdmin(){
  if(!isAdmin())return;
- const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr}]=await Promise.all([
+ const [{data:users,error:uerr},{data:acts,error:aerr},{data:logs,error:lerr},{data:notifs,error:nerr}]=await Promise.all([
    sb.from('profiles').select('*').order('created_at',{ascending:true}),
    sb.from('user_activity').select('*'),
-   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(500)
+   sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(500),
+   sb.from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(100)
  ]);
- if(uerr||aerr||lerr){console.warn(uerr||aerr||lerr);return}
- const amap=new Map((acts||[]).map(a=>[a.user_id,a.last_seen_at]));adminUsers=(users||[]).map(u=>({...u,last_seen_at:amap.get(u.user_id)||null}));auditLogs=logs||[];
+ if(uerr||aerr||lerr||nerr){console.warn(uerr||aerr||lerr||nerr);return}
+ const amap=new Map((acts||[]).map(a=>[a.user_id,a.last_seen_at]));
+ adminUsers=(users||[]).map(u=>({...u,last_seen_at:amap.get(u.user_id)||null}));
+ auditLogs=logs||[];
+ adminNotifications=notifs||[];
  renderAdmin()
 }
 function renderAdmin(){
- $('adminUsers').textContent=adminUsers.length;$('adminLessons').textContent=lessons.length;$('adminImports').textContent=auditLogs.filter(x=>['import','create'].includes(x.action)).length;
+ $('adminUsers').textContent=adminUsers.length;
+ $('adminLessons').textContent=lessons.length;
+ $('adminImports').textContent=auditLogs.filter(x=>['import','create'].includes(x.action)).length;
  $('adminRecent').textContent=auditLogs.filter(x=>Date.now()-new Date(x.created_at).getTime()<7*864e5).length;
- $('usersBody').innerHTML=adminUsers.map(u=>'<tr><td>'+esc(u.email)+'</td><td style="font-family:monospace">'+esc(u.user_id)+'</td><td><select class="select roleSelect" data-user="'+u.user_id+'" style="min-width:140px"><option value="standard"'+(u.role==='standard'?' selected':'')+'>Standard</option><option value="admin"'+(u.role==='admin'?' selected':'')+'>Administrateur</option></select></td><td>'+esc(new Date(u.created_at).toLocaleString('fr-FR'))+'</td><td>'+(u.last_seen_at?esc(new Date(u.last_seen_at).toLocaleString('fr-FR')):'—')+'</td></tr>').join('');
+
+ $('usersBody').innerHTML=adminUsers.map(u=>{
+   const self=u.user_id===session.user.id;
+   return '<tr><td>'+esc(u.email)+'</td><td style="font-family:monospace">'+esc(u.user_id)+'</td><td><select class="select roleSelect" data-user="'+u.user_id+'" style="min-width:140px"><option value="standard"'+(u.role==='standard'?' selected':'')+'>Standard</option><option value="admin"'+(u.role==='admin'?' selected':'')+'>Administrateur</option></select></td><td>'+esc(new Date(u.created_at).toLocaleString('fr-FR'))+'</td><td>'+(u.last_seen_at?esc(new Date(u.last_seen_at).toLocaleString('fr-FR')):'—')+'</td><td><button class="btn danger deleteUserBtn" data-delete-user="'+u.user_id+'" '+(self?'disabled title="Impossible de supprimer votre propre compte"':'')+'>Supprimer</button></td></tr>'
+ }).join('');
+
  document.querySelectorAll('.roleSelect').forEach(s=>s.onchange=()=>changeRole(s.dataset.user,s.value));
+ document.querySelectorAll('.deleteUserBtn:not([disabled])').forEach(b=>b.onclick=()=>deleteArizonaUser(b.dataset.deleteUser));
+ renderNotifications();
  renderLogs()
 }
 async function changeRole(userId,role){
- if(!isAdmin())return;const target=adminUsers.find(u=>u.user_id===userId);if(userId===session.user.id&&role!=='admin'&&!confirm('Tu es sur le point de retirer tes propres droits administrateur. Continuer ?')){renderAdmin();return}
- const {error}=await sb.from('profiles').update({role}).eq('user_id',userId);if(error){toast(error.message);await loadAdmin();return}toast('Rôle de '+(target?.email||userId)+' mis à jour.');await loadAdmin()
+ if(!isAdmin())return;
+ const target=adminUsers.find(u=>u.user_id===userId);
+ if(userId===session.user.id&&role!=='admin'&&!confirm('Tu es sur le point de retirer tes propres droits administrateur. Continuer ?')){renderAdmin();return}
+ const {error}=await sb.from('profiles').update({role}).eq('user_id',userId);
+ if(error){toast(error.message);await loadAdmin();return}
+ toast('Rôle de '+(target?.email||userId)+' mis à jour.');
+ await loadAdmin()
+}
+async function deleteArizonaUser(userId){
+ if(!isAdmin())return;
+ const target=adminUsers.find(u=>u.user_id===userId);
+ if(!target)return;
+ if(!confirm('Supprimer définitivement le compte '+target.email+' ?\n\nSes favoris, progression et données personnelles associées seront supprimés.'))return;
+ const {data,error}=await sb.functions.invoke('delete-arizona-user',{body:{user_id:userId}});
+ if(error)return toast('Suppression impossible : '+error.message);
+ if(data?.error)return toast('Suppression impossible : '+data.error);
+ toast('Utilisateur supprimé.');
+ await loadAdmin();
+}
+function renderNotifications(){
+ const box=$('notificationsList'),badge=$('notificationBadge');
+ if(!box||!badge)return;
+ const unread=adminNotifications.filter(n=>!n.read_at).length;
+ badge.textContent=String(unread);
+ badge.classList.toggle('hidden',unread===0);
+ box.innerHTML=adminNotifications.length?adminNotifications.map(n=>'<div class="card notificationItem '+(!n.read_at?'unread':'')+'"><div class="notificationDot"></div><div><div class="lessonTitle">'+esc(n.email||'Utilisateur Standard')+'</div><div class="small">'+esc(n.message)+'</div><div class="lessonDesc">'+esc(new Date(n.created_at).toLocaleString('fr-FR'))+'</div></div></div>').join(''):'<div class="card cardPad small">Aucune notification de connexion Standard.</div>';
+}
+async function markNotificationsRead(){
+ if(!isAdmin())return;
+ const ids=adminNotifications.filter(n=>!n.read_at).map(n=>n.id);
+ if(!ids.length)return toast('Aucune notification non lue.');
+ const {error}=await sb.from('admin_notifications').update({read_at:new Date().toISOString()}).in('id',ids);
+ if(error)return toast(error.message);
+ await loadAdmin();
+ toast('Notifications marquées comme lues.');
 }
 function renderLogs(){
  const q=$('logSearch').value.trim().toLowerCase(),act=$('logAction').value;const rows=auditLogs.filter(l=>(!act||l.action===act)&&(!q||(String(l.actor_email||'')+' '+l.action+' '+l.entity_type+' '+String(l.entity_id||'')+' '+JSON.stringify(l.metadata||{})).toLowerCase().includes(q)));
@@ -57,9 +104,9 @@ function switchView(v){
 function switchAdmin(sub){document.querySelectorAll('.adminPane').forEach(e=>e.classList.add('hidden'));$('admin-'+sub).classList.remove('hidden');document.querySelectorAll('.adminSub').forEach(e=>e.classList.toggle('active',e.dataset.sub===sub))}
 $('loginBtn').onclick=signIn;$('signupBtn').onclick=signUp;$('logoutBtn').onclick=logout;
 $('themeBtn').onclick=()=>{const next=document.body.classList.contains('light')?'dark':'light';localStorage.setItem('az_theme',next);applyTheme()};
-$('openToday').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));$('closeLesson').onclick=()=>$('lessonModal').classList.remove('open');$('modalFav').onclick=()=>activeLesson&&toggleFavorite(Number(activeLesson.id));$('editLessonBtn').onclick=()=>activeLesson&&openEdit(Number(activeLesson.id));
+$('openToday').onclick=()=>lessons[0]&&openLesson(Number(lessons[0].id));$('todayName').onclick=()=>{switchView('history');setTimeout(()=>$('historySearch')?.focus(),80)};$('closeLesson').onclick=()=>$('lessonModal').classList.remove('open');$('modalFav').onclick=()=>activeLesson&&toggleFavorite(Number(activeLesson.id));$('editLessonBtn').onclick=()=>activeLesson&&openEdit(Number(activeLesson.id));
 $('historySearch').oninput=renderLessonLists;$('importBtn').onclick=importLesson;$('newLessonBtn').onclick=newLesson;$('closeEdit').onclick=()=>$('editModal').classList.remove('open');$('saveEdit').onclick=async()=>{if($('editId').value)await saveEdit();else{const payload={lesson_date:$('editDate').value,name:$('editName').value.trim(),symbol:$('editSymbol').value.trim(),raw_text:$('editRaw').value.trim(),image_urls:$('editImages').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),created_by:session.user.id,updated_by:session.user.id};const {error}=await sb.from('arizona_lessons').insert(payload);if(error)return toast(error.message);$('editModal').classList.remove('open');await loadLessons();renderAll();await loadAdmin();toast('Fiche créée.')}};$('deleteLesson').onclick=deleteLesson;
-$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
+if($('markNotificationsRead'))$('markNotificationsRead').onclick=markNotificationsRead;$('logSearch').oninput=renderLogs;$('logAction').onchange=renderLogs;document.querySelectorAll('#mainTabs .tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('.adminSub').forEach(b=>b.onclick=()=>switchAdmin(b.dataset.sub));
 $('lessonModal').addEventListener('click',e=>{if(e.target===$('lessonModal'))$('lessonModal').classList.remove('open')});$('editModal').addEventListener('click',e=>{if(e.target===$('editModal'))$('editModal').classList.remove('open')});
 (async()=>{
  applyTheme();
