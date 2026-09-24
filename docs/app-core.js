@@ -210,7 +210,16 @@ function scheduleSearchAudit(query,surface='search',scope='all'){
  if(q.length<2)return;
  searchAuditTimers[surface]=setTimeout(()=>recordUsageEvent('search','search',surface,{query:q.slice(0,120),surface,scope}),750);
 }
-async function loadLessons(){const {data,error}=await sb.from('arizona_lessons').select('*').order('lesson_date',{ascending:false}).order('id',{ascending:false});if(error)throw error;const all=data||[];weeklyReports=all.filter(isWeeklyReport);lessons=all.filter(l=>!isWeeklyReport(l))}
+async function loadLessons(){
+ const base=sb.from('arizona_lessons').select('*').order('lesson_date',{ascending:false}).order('id',{ascending:false});
+ const reportsQuery=sb.from('arizona_lessons').select('*').like('name','BILAN HEBDOMADAIRE%').order('lesson_date',{ascending:false}).order('id',{ascending:false});
+ const [allRes,reportsRes]=await Promise.all([base,reportsQuery]);
+ if(allRes.error)throw allRes.error;
+ const all=allRes.data||[];
+ // Les bilans ont leur propre requête : ils ne dépendent jamais du filtre des fiches minérales.
+ weeklyReports=reportsRes.error?all.filter(isWeeklyReport):(reportsRes.data||[]);
+ lessons=all.filter(l=>!isWeeklyReport(l));
+}
 async function loadFavorites(){const {data,error}=await sb.from('user_favorites').select('lesson_id').eq('user_id',session.user.id);if(error)throw error;favorites=new Set((data||[]).map(x=>Number(x.lesson_id)))}
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
 
