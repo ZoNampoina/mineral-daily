@@ -61,6 +61,7 @@
       <button class="tab active" data-view="home">Aujourd’hui</button>
       <button class="tab" data-view="explorer">Explorer</button>
       <button class="tab" data-view="history">Historique</button>
+      <button id="weeklyReportsMenuBtn" class="tab" data-view="weekly-reports">Bilans</button>
       <button class="tab" data-view="favorites">Favoris</button>
     </div>
     <div class="menuUsageGroup">
@@ -107,6 +108,7 @@
   <div class="sectionTitleRow"><div class="sectionTitle">Images réelles</div><button id="refreshHomeImages" class="btn favBtn compactIconBtn" type="button" title="Rafraîchir les images" aria-label="Rafraîchir les images">↻</button></div><div id="homeGallery" class="gallery"></div>
 </section>
 
+<section id="view-weekly-reports" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn weeklyBack" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div class="card cardPad"><div class="eyebrow">Veille ARIZONA</div><h2>Bilans hebdomadaires</h2><div class="small">Synthèses professionnelles de la semaine, séparées des fiches minérales quotidiennes.</div></div><div id="weeklyReportsList" class="list" style="margin-top:14px"></div></section>
 <section id="view-history" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div class="searchRow"><input id="historySearch" class="input" placeholder="Rechercher un minéral…"></div><div id="historyList" class="list"></div></section>
 <section id="view-favorites" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div id="favoritesList" class="list"></div></section>
 <section id="view-progress" class="view hidden"><div class="viewBackRow"><button class="btn backTodayBtn" type="button" aria-label="Retour à Aujourd’hui" title="Retour à Aujourd’hui">←</button></div><div class="card cardPad"><div class="eyebrow">Progression</div><h2>Quiz minéralogie & ingénierie</h2><div id="progressSummary" class="summary"></div></div><div class="sectionTitle">Résultats</div><div id="progressList" class="list"></div></section>
