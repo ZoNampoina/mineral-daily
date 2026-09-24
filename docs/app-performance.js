@@ -1,6 +1,6 @@
 
 /* ARIZONA V21.7 · Performance Core */
-const AZ_CORE_CACHE_VERSION=219;
+const AZ_CORE_CACHE_VERSION=220;
 let azLessonDetailCache=new Map();
 let azLoadingSeq=0,azLoadingJobs=new Map(),azLoaderTimer=null;
 let azLastCoreRefresh=0,azCoreRefreshPromise=null;
@@ -49,7 +49,8 @@ function saveCoreCacheV217(){
   try{
     localStorage.setItem(coreCacheKeyV217(),JSON.stringify({
       version:AZ_CORE_CACHE_VERSION,saved_at:Date.now(),
-      lessons:lessons.map(coreLessonIndexV217),
+      lessons:lessons.filter(l=>!isWeeklyReport(l)).map(coreLessonIndexV217),
+      weeklyReports:weeklyReports.map(coreLessonIndexV217),
       favorites:[...favorites],
       progress:[...progress.entries()]
     }));
@@ -87,7 +88,7 @@ function restoreCoreCacheV217(){
     const data=JSON.parse(localStorage.getItem(coreCacheKeyV217())||'null');
     if(!data||data.version!==AZ_CORE_CACHE_VERSION||!Array.isArray(data.lessons)||!data.lessons.length)return false;
     const cachedAll=data.lessons;
-    weeklyReports=cachedAll.filter(isWeeklyReport);
+    weeklyReports=Array.isArray(data.weeklyReports)?data.weeklyReports.filter(isWeeklyReport):cachedAll.filter(isWeeklyReport);
     lessons=cachedAll.filter(l=>!isWeeklyReport(l));
     favorites=new Set((data.favorites||[]).map(Number));
     progress=new Map((data.progress||[]).map(([k,v])=>[Number(k),v]));
