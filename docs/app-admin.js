@@ -290,4 +290,41 @@ function setMenuOpen(open){
 if($('brandMenuBtn')) $('brandMenuBtn').onclick=()=>setMenuOpen(!$('appMenu').classList.contains('open'));
 if($('closeMenuBtn')) $('closeMenuBtn').onclick=()=>setMenuOpen(false);
 if($('menuBackdrop')) $('menuBackdrop').onclick=()=>setMenuOpen(false);
-document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenuOpen(false)});
+// Navigation retour hiérarchique : Échap clavier + bouton Retour Android/tablette.
+function arizonaBack(){
+  // 1. Fermer d'abord le niveau superposé le plus haut.
+  const openModal=[...document.querySelectorAll('.modal.open')].reverse()[0];
+  if(openModal){openModal.classList.remove('open');return true}
+
+  // 2. Fermer le menu latéral s'il est ouvert.
+  if($('appMenu')?.classList.contains('open')){setMenuOpen(false);return true}
+
+  // 3. Dans l'administration, remonter d'abord vers le tableau de bord admin.
+  const adminView=$('view-admin');
+  if(adminView&&!adminView.classList.contains('hidden')){
+    const activeSub=document.querySelector('.adminPane:not(.hidden)');
+    if(activeSub&&activeSub.id!=='admin-dashboard'){switchAdmin('dashboard');return true}
+  }
+
+  // 4. Depuis toute vue secondaire, remonter au niveau Aujourd'hui.
+  const current=[...document.querySelectorAll('.view')].find(v=>!v.classList.contains('hidden'));
+  if(current&&current.id!=='view-home'){switchView('home');return true}
+
+  return false;
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(arizonaBack())e.preventDefault();
+});
+
+// Sur Android/tablette/PWA, le bouton Retour du système suit la même hiérarchie.
+// Un état sentinelle empêche la fermeture immédiate de l'application tant qu'ARIZONA peut remonter d'un niveau.
+if(history&&history.pushState){
+  history.replaceState({...history.state,arizonaRoot:true},'',location.href);
+  history.pushState({arizonaGuard:true},'',location.href);
+  window.addEventListener('popstate',()=>{
+    if(arizonaBack()){
+      history.pushState({arizonaGuard:true},'',location.href);
+    }
+  });
+}
