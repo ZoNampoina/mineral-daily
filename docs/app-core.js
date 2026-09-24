@@ -2,7 +2,8 @@ const SUPABASE_URL="https://uhuxkkiqpzcfefjkjwqn.supabase.co";
 const SUPABASE_KEY=atob("c2JfcHVibGlzaGFibGVfOXdMa0dGRWZZN3pvQU9Ia3I4aDc5QV9WWWF3ejZlag==");
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id);
-let session=null, profile=null, lessons=[], favorites=new Set(), progress=new Map(), activeLesson=null, adminUsers=[], auditLogs=[];
+let session=null, profile=null, lessons=[], weeklyReports=[], favorites=new Set(), progress=new Map(), activeLesson=null, adminUsers=[], auditLogs=[];
+const isWeeklyReport=l=>String(l?.name||'').startsWith('BILAN HEBDOMADAIRE —');
 const HEADINGS=['NOM DU MINÉRAL','RÉSUMÉ EXÉCUTIF','CARACTÉRISTIQUES CHIMIQUES','CARACTÉRISTIQUES PHYSIQUES','GÉOLOGIE ET GENÈSE','ZONES MONDIALES','MADAGASCAR','EXPLOITATION','TRAITEMENT / MINÉRALURGIE','USAGES','MARCHÉ INTERNATIONAL','CONVERSION ARIARY','PRODUCTION ANNUELLE','ÉCONOMIE','ENVIRONNEMENT','GÉOPOLITIQUE','À RETENIR','VOCABULAIRE','CAS CONCRET','MINI-CAS PRATIQUE','ERREUR FRÉQUENTE','QUIZ'];
 const SECTION_LABELS={
  'CARACTÉRISTIQUES CHIMIQUES':'Caractéristiques chimiques','CARACTÉRISTIQUES PHYSIQUES':'Caractéristiques physiques','GÉOLOGIE ET GENÈSE':'Géologie et genèse','ZONES MONDIALES':'Zones mondiales','MADAGASCAR':'Madagascar','EXPLOITATION':'Exploitation','TRAITEMENT / MINÉRALURGIE':'Traitement / minéralurgie','USAGES':'Usages','MARCHÉ INTERNATIONAL':'Marché international','CONVERSION ARIARY':'Conversion ariary','PRODUCTION ANNUELLE':'Production annuelle','ÉCONOMIE':'Économie','ENVIRONNEMENT':'Environnement','GÉOPOLITIQUE':'Géopolitique','À RETENIR':'À retenir','VOCABULAIRE':'Vocabulaire','CAS CONCRET':'Cas concret','MINI-CAS PRATIQUE':'Mini-cas pratique','ERREUR FRÉQUENTE':'Erreur fréquente'
@@ -209,11 +210,11 @@ function scheduleSearchAudit(query,surface='search',scope='all'){
  if(q.length<2)return;
  searchAuditTimers[surface]=setTimeout(()=>recordUsageEvent('search','search',surface,{query:q.slice(0,120),surface,scope}),750);
 }
-async function loadLessons(){const {data,error}=await sb.from('arizona_lessons').select('*').order('lesson_date',{ascending:false}).order('id',{ascending:false});if(error)throw error;lessons=data||[]}
+async function loadLessons(){const {data,error}=await sb.from('arizona_lessons').select('*').order('lesson_date',{ascending:false}).order('id',{ascending:false});if(error)throw error;const all=data||[];weeklyReports=all.filter(isWeeklyReport);lessons=all.filter(l=>!isWeeklyReport(l))}
 async function loadFavorites(){const {data,error}=await sb.from('user_favorites').select('lesson_id').eq('user_id',session.user.id);if(error)throw error;favorites=new Set((data||[]).map(x=>Number(x.lesson_id)))}
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
 
-function renderAll(){applyTheme();renderHome();renderLessonLists();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence()}
+function renderAll(){applyTheme();ensureWeeklyReportsUI();renderHome();renderLessonLists();renderWeeklyReports();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence()}
 function applyTheme(){
  const theme=localStorage.getItem('az_theme')||'dark',isLight=theme==='light';
  document.body.classList.toggle('light',isLight);
@@ -316,4 +317,61 @@ function renderProgress(){
  const done=progress.size,total=lessons.filter(l=>parseQuiz(l.raw_text).length).length;const scores=[...progress.values()].map(x=>Number(x.score||0));const avg=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):'—';
  $('progressSummary').textContent=done+' quiz réalisés sur '+total+'. Score moyen : '+avg+'/3.';
  $('progressList').innerHTML=lessons.map(l=>{const p=progress.get(Number(l.id));return '<div class="card progressCard"><div class="badge">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+'</div><div class="lessonDesc">'+(p?'Meilleur score : '+p.score+'/3':'Quiz non réalisé')+'</div></div><button class="btn progressOpenBtn" data-open="'+l.id+'">'+(p?'Revoir':'Commencer')+'</button></div>'}).join('');document.querySelectorAll('#progressList [data-open]').forEach(b=>b.onclick=()=>openLesson(Number(b.dataset.open)))
+}
+
+/* ARIZONA — bilans hebdomadaires séparés des fiches minérales */
+function ensureWeeklyReportsUI(){
+ if(!$('view-weekly-reports')){
+   const main=document.querySelector('main');
+   if(main){
+     const s=document.createElement('section');s.id='view-weekly-reports';s.className='view hidden';
+     s.innerHTML='<div class="viewBackRow"><button class="btn backTodayBtn weeklyBack" type="button" aria-label="Retour" title="Retour">←</button></div><div class="card cardPad"><div class="eyebrow">Veille ARIZONA</div><h2>Bilans hebdomadaires</h2><div class="small">Synthèses professionnelles séparées des fiches minérales quotidiennes.</div></div><div id="weeklyReportsList" class="list" style="margin-top:14px"></div>';
+     main.appendChild(s);
+     s.querySelector('.weeklyBack').onclick=()=>showViewById('today');
+   }
+ }
+ if(!$('weeklyReportsMenuBtn')){
+   const candidates=[...document.querySelectorAll('button')];
+   const anchor=candidates.find(b=>/historique/i.test(b.textContent||''))||candidates.find(b=>/favoris/i.test(b.textContent||''));
+   if(anchor){
+     const b=anchor.cloneNode(true);b.id='weeklyReportsMenuBtn';
+     b.removeAttribute('data-view');b.removeAttribute('onclick');
+     const txt=(b.textContent||'').trim();b.textContent=txt.replace(/Historique|Favoris/i,'Bilans')||'Bilans';
+     b.onclick=e=>{e.preventDefault();showWeeklyReportsView()};
+     anchor.parentNode.insertBefore(b,anchor.nextSibling);
+   }
+ }
+}
+function showViewById(name){
+ const target=$('view-'+name)||$('view-today');
+ document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+ if(target)target.classList.remove('hidden');
+ if(typeof setMenuOpen==='function')setMenuOpen(false);
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function showWeeklyReportsView(){
+ ensureWeeklyReportsUI();renderWeeklyReports();showViewById('weekly-reports');
+ recordUsageEvent('view_weekly_reports','weekly_report','list',{count:weeklyReports.length});
+}
+function weeklyReportCard(l){
+ const summary=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');
+ return '<article class="card cardPad weeklyReportCard" data-weekly="'+l.id+'" tabindex="0" role="button"><div class="eyebrow">Bilan hebdomadaire · '+esc(formatDate(l.lesson_date))+'</div><h3>'+esc(l.name.replace(/^BILAN HEBDOMADAIRE\s*—\s*/i,''))+'</h3><div class="small">'+esc(summary)+'</div><div style="margin-top:10px"><button class="btn weeklyOpen" data-weekly-open="'+l.id+'">Voir le bilan complet</button></div></article>';
+}
+function renderWeeklyReports(){
+ const box=$('weeklyReportsList');if(!box)return;
+ box.innerHTML=weeklyReports.length?weeklyReports.map(weeklyReportCard).join(''):'<div class="card cardPad small">Aucun bilan hebdomadaire publié.</div>';
+ box.querySelectorAll('[data-weekly]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;openWeeklyReport(Number(card.dataset.weekly))};card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openWeeklyReport(Number(card.dataset.weekly))}}});
+ box.querySelectorAll('[data-weekly-open]').forEach(b=>b.onclick=()=>openWeeklyReport(Number(b.dataset.weeklyOpen)));
+}
+function openWeeklyReport(id){
+ const l=weeklyReports.find(x=>Number(x.id)===Number(id));if(!l)return;
+ activeLesson=l;recordUsageEvent('view_weekly_report','weekly_report',l.id,{report_name:l.name});
+ $('lessonModal').classList.add('open');
+ $('modalName').textContent=l.name;$('modalDate').textContent=formatDate(l.lesson_date);
+ if($('modalFav'))$('modalFav').textContent=favorites.has(Number(l.id))?'★':'☆';
+ $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');
+ fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l);
+ if(typeof renderLessonExtras==='function')renderLessonExtras(l);
+ if(typeof renderLessonV20==='function')renderLessonV20(l);
+ if(typeof renderLessonIntelligence==='function')renderLessonIntelligence(l);
 }
