@@ -367,29 +367,37 @@ function showWeeklyReportsView(){
  ensureWeeklyReportsUI();showViewById('weekly-reports');renderWeeklyReports();
  recordUsageEvent('view_weekly_reports','weekly_report','list',{count:weeklyReports.length});
 }
+function weeklyReportPeriod(l){
+ return String(l.name||'').replace(/^BILAN HEBDOMADAIRE\s*—\s*/i,'')||formatDate(l.lesson_date);
+}
+function weeklyMinerals(l){
+ const raw=String(l.raw_text||'').toLowerCase();
+ return ['Or','Cobalt','Nickel','Étain','Graphite','Cuivre','Platine','Lithium','Manganèse','Chrome','Vanadium','Tantale'].filter(n=>raw.includes(n.toLowerCase()));
+}
 function weeklyReportCard(l){
- const summary=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');
- return '<article class="card cardPad weeklyReportCard" data-weekly="'+l.id+'" tabindex="0" role="button"><div class="eyebrow">Bilan hebdomadaire · '+esc(formatDate(l.lesson_date))+'</div><h3>'+esc(l.name.replace(/^BILAN HEBDOMADAIRE\s*—\s*/i,''))+'</h3><div class="small">'+esc(summary)+'</div><div style="margin-top:10px"><button class="btn weeklyOpen" data-weekly-open="'+l.id+'">Voir le bilan complet</button></div></article>';
+ const mins=weeklyMinerals(l),summary=section(l.raw_text,'RÉSUMÉ EXÉCUTIF')||'';
+ return '<article class="card cardPad weeklyReportCard" data-weekly="'+l.id+'" tabindex="0"><div class="eyebrow">VEILLE & BILAN · '+esc(formatDate(l.lesson_date))+'</div><h3>'+esc(weeklyReportPeriod(l))+'</h3><div class="weeklyKpis"><span><b>'+mins.length+'</b><small> minéraux étudiés</small></span><span><b>'+(l.data_status==='verified'?'✓':'!')+'</b><small> '+esc(l.data_status||'données')+'</small></span></div><div class="small">'+esc(summary.slice(0,360))+(summary.length>360?'…':'')+'</div><div class="weeklyChips">'+mins.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div><div style="margin-top:12px"><button class="btn weeklyOpen" data-weekly-open="'+l.id+'">Ouvrir le tableau de bord</button></div></article>';
 }
 async function renderWeeklyReports(){
  const box=$('weeklyReportsList');if(!box)return;
  box.innerHTML='<div class="card cardPad small">Chargement des bilans…</div>';
  const {data,error}=await sb.from('arizona_lessons').select('*').ilike('name','BILAN HEBDOMADAIRE%').order('lesson_date',{ascending:false}).order('id',{ascending:false});
- if(error){console.error('Bilans',error);box.innerHTML='<div class="card cardPad small">Impossible de charger les bilans. Réessaie après synchronisation.</div>';return}
+ if(error){box.innerHTML='<div class="card cardPad small">Impossible de charger les bilans.</div>';return}
  weeklyReports=(data||[]).filter(isWeeklyReport);
  box.innerHTML=weeklyReports.length?weeklyReports.map(weeklyReportCard).join(''):'<div class="card cardPad small">Aucun bilan hebdomadaire publié.</div>';
- box.querySelectorAll('[data-weekly]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;openWeeklyReport(Number(card.dataset.weekly))};card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openWeeklyReport(Number(card.dataset.weekly))}}});
+ box.querySelectorAll('[data-weekly]').forEach(card=>card.onclick=e=>{if(!e.target.closest('button'))openWeeklyReport(Number(card.dataset.weekly))});
  box.querySelectorAll('[data-weekly-open]').forEach(b=>b.onclick=()=>openWeeklyReport(Number(b.dataset.weeklyOpen)));
 }
 function openWeeklyReport(id){
  const l=weeklyReports.find(x=>Number(x.id)===Number(id));if(!l)return;
  activeLesson=l;recordUsageEvent('view_weekly_report','weekly_report',l.id,{report_name:l.name});
- $('lessonModal').classList.add('open');
- $('modalName').textContent=l.name;$('modalDate').textContent=formatDate(l.lesson_date);
- if($('modalFav'))$('modalFav').textContent=favorites.has(Number(l.id))?'★':'☆';
- $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');
- fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l);
- if(typeof renderLessonExtras==='function')renderLessonExtras(l);
- if(typeof renderLessonV20==='function')renderLessonV20(l);
- if(typeof renderLessonIntelligence==='function')renderLessonIntelligence(l);
+ const raw=String(l.raw_text||''),mins=weeklyMinerals(l),get=t=>section(raw,t)||'';
+ const rows=mins.map(n=>'<tr><td><b>'+esc(n)+'</b></td><td>Étudié</td><td>Fiche quotidienne</td></tr>').join('');
+ const html='<div class="weeklyDashboard"><div class="weeklyHero"><div class="eyebrow">TABLEAU DE BORD HEBDOMADAIRE</div><h2>'+esc(weeklyReportPeriod(l))+'</h2><p>'+esc(get('RÉSUMÉ EXÉCUTIF'))+'</p></div><div class="weeklyKpis weeklyKpisLarge"><span><b>'+mins.length+'</b><small> minéraux</small></span><span><b>'+(l.data_status==='verified'?'✓':'!')+'</b><small> statut '+esc(l.data_status||'')+'</small></span><span><b>'+esc(formatDate(l.lesson_date))+'</b><small> publication</small></span></div><section class="weeklyPanel"><div class="eyebrow">COMPARAISON TECHNIQUE</div><h3>Minéraux étudiés</h3><div class="weeklyTableWrap"><table class="weeklyTable"><thead><tr><th>Minéral</th><th>Couverture</th><th>Référence</th></tr></thead><tbody>'+rows+'</tbody></table></div></section><section class="weeklyPanel"><div class="eyebrow">MARCHÉ DE LA SEMAINE</div><h3>Prix, tendances et facteurs</h3><p>'+esc(get('MARCHÉ INTERNATIONAL')||'Voir les références de marché des fiches de la période.')+'</p></section><section class="weeklyPanel"><div class="eyebrow">FOCUS MADAGASCAR</div><h3>Occurrences · projets · potentiel</h3><p>'+esc(get('MADAGASCAR')||'Aucune synthèse Madagascar disponible.')+'</p></section><section class="weeklyPanel"><div class="eyebrow">LECTURE INGÉNIEUR</div><h3>Analyse transversale</h3><div class="weeklyColumns"><div><b>Économie</b><p>'+esc(get('ÉCONOMIE'))+'</p></div><div><b>Environnement</b><p>'+esc(get('ENVIRONNEMENT'))+'</p></div><div><b>Géopolitique</b><p>'+esc(get('GÉOPOLITIQUE'))+'</p></div></div></section><section class="weeklyPanel"><div class="eyebrow">À RETENIR</div><p>'+esc(get('À RETENIR'))+'</p></section></div>';
+ $('lessonModal').classList.add('open');$('modalName').textContent='Bilan hebdomadaire';$('modalDate').textContent=weeklyReportPeriod(l);
+ if($('modalFav'))$('modalFav').style.display='none';
+ $('modalSummary').innerHTML=html;
+ if($('modalGallery'))$('modalGallery').innerHTML='';
+ if($('modalDetails'))$('modalDetails').innerHTML='';
+ if($('quizBox'))$('quizBox').innerHTML='';
 }
