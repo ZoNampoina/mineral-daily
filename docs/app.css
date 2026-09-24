@@ -1593,3 +1593,6 @@ body.menuOpen{overflow:hidden}
  #weeklyDashboardBody .weeklyKpisLarge{grid-template-columns:1fr}
  #weeklyDashboardBody .weeklyTable{min-width:580px}
 }
+
+/* Weekly table sticky first-column readability */
+@media(max-width:760px){#weeklyDashboardBody .weeklyTable th:first-child{background:var(--panel)!important;box-shadow:1px 0 0 var(--line),8px 0 14px rgba(0,0,0,.06)}#weeklyDashboardBody .weeklyTable td:first-child{background:var(--card)!important;box-shadow:1px 0 0 var(--line),8px 0 14px rgba(0,0,0,.04)}}
