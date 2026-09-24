@@ -246,7 +246,7 @@ function lessonCard(l,admin=false){
  return '<div class="card lessonCard lessonCardClickable" data-open-card="'+l.id+'" tabindex="0" role="button" aria-label="Ouvrir la fiche '+esc(l.name)+'" onclick="if(!event.target.closest(\'button,input,select,a\'))openLesson('+l.id+')"><div class="thumb thumbFallback" data-thumb="'+l.id+'">'+esc(compactSymbol(l))+'</div><div class="lessonMain"><div class="lessonTitle">'+esc(l.name)+' <span class="roleBadge">'+esc(compactSymbol(l))+'</span></div><div class="lessonDesc">'+esc(formatDate(l.lesson_date))+'</div><div class="lessonSummary">'+esc(section(l.raw_text,'RÉSUMÉ EXÉCUTIF'))+'</div></div><div class="lessonActions"><button class="btn favToggle" data-fav="'+l.id+'" title="Favori" aria-label="Favori">'+(fav?'★':'☆')+'</button>'+(admin?'<button class="btn editLesson editIconBtn" data-edit="'+l.id+'" aria-label="Modifier" title="Modifier">✎</button>':'')+'</div></div>'
 }
 function renderLessonLists(){
- const q=$('historySearch').value.trim().toLowerCase();const filtered=lessons.filter(l=>!q||l.name.toLowerCase().includes(q)||l.raw_text.toLowerCase().includes(q));
+ const q=$('historySearch').value.trim().toLowerCase();const filtered=lessons.filter(l=>!isWeeklyReport(l)).filter(l=>!q||l.name.toLowerCase().includes(q)||String(l.raw_text||l.summary_text||'').toLowerCase().includes(q));
  $('historyList').innerHTML=filtered.map(l=>lessonCard(l)).join('')||'<div class="card cardPad small">Aucun résultat.</div>';
  const favs=lessons.filter(l=>favorites.has(Number(l.id)));$('favoritesList').innerHTML=favs.map(l=>lessonCard(l)).join('')||'<div class="card cardPad small">Aucun favori pour le moment.</div>';
  if(isAdmin())$('adminLessonsList').innerHTML=lessons.map(l=>lessonCard(l,true)).join('');
@@ -364,15 +364,19 @@ function wireWeeklyReportsNavigation(){
  document.querySelectorAll('#view-weekly-reports .weeklyBack').forEach(x=>x.onclick=()=>showViewById('home'));
 }
 function showWeeklyReportsView(){
- ensureWeeklyReportsUI();renderWeeklyReports();showViewById('weekly-reports');
+ ensureWeeklyReportsUI();showViewById('weekly-reports');renderWeeklyReports();
  recordUsageEvent('view_weekly_reports','weekly_report','list',{count:weeklyReports.length});
 }
 function weeklyReportCard(l){
  const summary=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');
  return '<article class="card cardPad weeklyReportCard" data-weekly="'+l.id+'" tabindex="0" role="button"><div class="eyebrow">Bilan hebdomadaire · '+esc(formatDate(l.lesson_date))+'</div><h3>'+esc(l.name.replace(/^BILAN HEBDOMADAIRE\s*—\s*/i,''))+'</h3><div class="small">'+esc(summary)+'</div><div style="margin-top:10px"><button class="btn weeklyOpen" data-weekly-open="'+l.id+'">Voir le bilan complet</button></div></article>';
 }
-function renderWeeklyReports(){
+async function renderWeeklyReports(){
  const box=$('weeklyReportsList');if(!box)return;
+ box.innerHTML='<div class="card cardPad small">Chargement des bilans…</div>';
+ const {data,error}=await sb.from('arizona_lessons').select('*').ilike('name','BILAN HEBDOMADAIRE%').order('lesson_date',{ascending:false}).order('id',{ascending:false});
+ if(error){console.error('Bilans',error);box.innerHTML='<div class="card cardPad small">Impossible de charger les bilans. Réessaie après synchronisation.</div>';return}
+ weeklyReports=(data||[]).filter(isWeeklyReport);
  box.innerHTML=weeklyReports.length?weeklyReports.map(weeklyReportCard).join(''):'<div class="card cardPad small">Aucun bilan hebdomadaire publié.</div>';
  box.querySelectorAll('[data-weekly]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;openWeeklyReport(Number(card.dataset.weekly))};card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openWeeklyReport(Number(card.dataset.weekly))}}});
  box.querySelectorAll('[data-weekly-open]').forEach(b=>b.onclick=()=>openWeeklyReport(Number(b.dataset.weeklyOpen)));
