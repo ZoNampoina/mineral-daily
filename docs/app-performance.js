@@ -1,6 +1,6 @@
 
 /* ARIZONA V21.7 · Performance Core */
-const AZ_CORE_CACHE_VERSION=218;
+const AZ_CORE_CACHE_VERSION=219;
 let azLessonDetailCache=new Map();
 let azLoadingSeq=0,azLoadingJobs=new Map(),azLoaderTimer=null;
 let azLastCoreRefresh=0,azCoreRefreshPromise=null;
@@ -86,7 +86,9 @@ function restoreCoreCacheV217(){
   try{
     const data=JSON.parse(localStorage.getItem(coreCacheKeyV217())||'null');
     if(!data||data.version!==AZ_CORE_CACHE_VERSION||!Array.isArray(data.lessons)||!data.lessons.length)return false;
-    lessons=data.lessons;
+    const cachedAll=data.lessons;
+    weeklyReports=cachedAll.filter(isWeeklyReport);
+    lessons=cachedAll.filter(l=>!isWeeklyReport(l));
     favorites=new Set((data.favorites||[]).map(Number));
     progress=new Map((data.progress||[]).map(([k,v])=>[Number(k),v]));
     hydrateRecentDetailsV217();
@@ -95,11 +97,15 @@ function restoreCoreCacheV217(){
 }
 
 async function loadLessons(){
-  const {data,error}=await sb.from('arizona_lessons')
-    .select('id,lesson_date,name,symbol,image_urls,created_at,updated_at,data_status,last_verified_at,summary_text,madagascar_text,has_quiz')
-    .order('lesson_date',{ascending:false}).order('id',{ascending:false});
-  if(error)throw error;
-  lessons=data||[];
+  const fields='id,lesson_date,name,symbol,image_urls,created_at,updated_at,data_status,last_verified_at,summary_text,madagascar_text,has_quiz';
+  const [allRes,reportsRes]=await Promise.all([
+    sb.from('arizona_lessons').select(fields).order('lesson_date',{ascending:false}).order('id',{ascending:false}),
+    sb.from('arizona_lessons').select(fields).like('name','BILAN HEBDOMADAIRE%').order('lesson_date',{ascending:false}).order('id',{ascending:false})
+  ]);
+  if(allRes.error)throw allRes.error;
+  const all=allRes.data||[];
+  weeklyReports=reportsRes.error?all.filter(isWeeklyReport):(reportsRes.data||[]);
+  lessons=all.filter(l=>!isWeeklyReport(l));
   hydrateRecentDetailsV217();
 }
 async function ensureLessonDetail(id,force=false){
@@ -135,7 +141,9 @@ async function ensureAllLessonDetails(){
   if(lessons.length&&lessons.every(l=>l.raw_text))return lessons;
   const {data,error}=await sb.from('arizona_lessons').select('*').order('lesson_date',{ascending:false}).order('id',{ascending:false});
   if(error)throw error;
-  lessons=data||[];
+  const all=data||[];
+  weeklyReports=all.filter(isWeeklyReport);
+  lessons=all.filter(l=>!isWeeklyReport(l));
   lessons.slice(0,8).forEach(cacheLessonDetailV217);
   return lessons;
 }
