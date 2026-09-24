@@ -290,53 +290,46 @@ function setMenuOpen(open){
 if($('brandMenuBtn')) $('brandMenuBtn').onclick=()=>setMenuOpen(!$('appMenu').classList.contains('open'));
 if($('closeMenuBtn')) $('closeMenuBtn').onclick=()=>setMenuOpen(false);
 if($('menuBackdrop')) $('menuBackdrop').onclick=()=>setMenuOpen(false);
-// Navigation retour hiérarchique : Échap clavier + bouton Retour Android/tablette.
+// Navigation retour hiérarchique commune à Échap et au bouton Retour Android/PWA.
 function arizonaBack(){
-  // 1. Fermer d'abord le niveau superposé le plus haut.
   const openModal=[...document.querySelectorAll('.modal.open')].reverse()[0];
   if(openModal){openModal.classList.remove('open');return true}
-
-  // 2. Fermer le menu latéral s'il est ouvert.
   if($('appMenu')?.classList.contains('open')){setMenuOpen(false);return true}
 
-  // 3. Dans l'administration, remonter d'abord vers le tableau de bord admin.
   const adminView=$('view-admin');
   if(adminView&&!adminView.classList.contains('hidden')){
     const activeSub=document.querySelector('.adminPane:not(.hidden)');
     if(activeSub&&activeSub.id!=='admin-dashboard'){switchAdmin('dashboard');return true}
   }
 
-  // 4. Depuis toute vue secondaire, remonter au niveau Aujourd'hui.
+  // Sous-niveaux internes : Projet -> aperçu, puis vue parente.
   const current=[...document.querySelectorAll('.view')].find(v=>!v.classList.contains('hidden'));
-  if(current&&current.id!=='view-home'){switchView('home');return true}
+  if(current?.id==='view-projects'&&typeof activeProjectTabV215!=='undefined'&&activeProjectTabV215!=='overview'){
+    activeProjectTabV215='overview';
+    if(typeof renderProjectWorkspaceV215==='function')renderProjectWorkspaceV215();
+    return true;
+  }
 
+  if(current&&current.id!=='view-home'){switchView('home');return true}
   return false;
 }
 document.addEventListener('keydown',e=>{
-  if(e.key!=='Escape')return;
-  if(arizonaBack())e.preventDefault();
+  if(e.key==='Escape'&&arizonaBack())e.preventDefault();
 });
 
-// Android/tablette/PWA : chaque pression Retour doit produire exactement
-// le même résultat qu'une pression sur Échap, y compris 2, 3 fois de suite.
-// Deux sentinelles alternées garantissent qu'il reste toujours un niveau
-// d'historique à consommer sans dépendre du timing de pushState après popstate.
-if(history&&history.pushState){
-  history.replaceState({...history.state,arizonaRoot:true},'',location.href);
-  history.pushState({arizonaGuard:1},'',location.href);
-  history.pushState({arizonaGuard:2},'',location.href);
-  let azBackRepair=false;
-  window.addEventListener('popstate',()=>{
-    if(azBackRepair)return;
-    const handled=arizonaBack();
-    if(handled){
-      azBackRepair=true;
-      // Reconstitue immédiatement les deux niveaux de garde.
-      // Le premier replace l'état courant, le second devient le prochain
-      // niveau consommé par le bouton Retour Android.
-      history.replaceState({...history.state,arizonaGuard:1},'',location.href);
-      history.pushState({arizonaGuard:2},'',location.href);
-      queueMicrotask(()=>{azBackRepair=false});
-    }
-  });
+// Android/PWA : on utilise une barrière d'historique réarmée AVANT chaque retour.
+// Cela évite le défaut précédent où la 2e pression n'avait plus d'entrée à consommer.
+let azBackGuardReady=false;
+function armArizonaBackGuard(){
+  if(!history?.pushState||azBackGuardReady)return;
+  history.pushState({...(history.state||{}),azBackGuard:true,azBackNonce:Date.now()},'',location.href);
+  azBackGuardReady=true;
 }
+armArizonaBackGuard();
+window.addEventListener('popstate',()=>{
+  azBackGuardReady=false;
+  if(arizonaBack()){
+    // Réarmement synchrone : la prochaine pression Android est immédiatement disponible.
+    armArizonaBackGuard();
+  }
+});
