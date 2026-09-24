@@ -214,7 +214,7 @@ async function loadLessons(){const {data,error}=await sb.from('arizona_lessons')
 async function loadFavorites(){const {data,error}=await sb.from('user_favorites').select('lesson_id').eq('user_id',session.user.id);if(error)throw error;favorites=new Set((data||[]).map(x=>Number(x.lesson_id)))}
 async function loadProgress(){const {data,error}=await sb.from('quiz_progress').select('*').eq('user_id',session.user.id);if(error)throw error;progress=new Map((data||[]).map(x=>[Number(x.lesson_id),x]))}
 
-function renderAll(){applyTheme();ensureWeeklyReportsUI();renderHome();renderLessonLists();renderWeeklyReports();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence()}
+function renderAll(){applyTheme();ensureWeeklyReportsUI();wireWeeklyReportsNavigation();renderHome();renderLessonLists();renderWeeklyReports();renderProgress();if(typeof renderArizonaIntelligence==='function')renderArizonaIntelligence()}
 function applyTheme(){
  const theme=localStorage.getItem('az_theme')||'dark',isLight=theme==='light';
  document.body.classList.toggle('light',isLight);
@@ -226,7 +226,7 @@ function applyTheme(){
  }
 }
 function renderHome(){
- const l=lessons[0];$('countLessons').textContent=lessons.length;$('countFav').textContent=favorites.size;
+ const l=lessons.find(x=>!isWeeklyReport(x));$('countLessons').textContent=lessons.length;$('countFav').textContent=favorites.size;
  const scores=[...progress.values()].map(x=>Number(x.score||0));$('avgQuiz').textContent=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)+'/3':'—';
  if(!l){$('todayName').textContent='Aucune fiche';$('todaySummary').textContent='Aucune fiche publiée.';return}
  $('todayName').textContent=l.name;$('todayDate').textContent=formatDate(l.lesson_date);$('todaySymbol').textContent=compactSymbol(l);$('todaySummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');
@@ -302,7 +302,7 @@ function setAllTechnicalDetails(open){
 }
 if($('expandAllDetails')) $('expandAllDetails').onclick=()=>setAllTechnicalDetails(true);
 if($('collapseAllDetails')) $('collapseAllDetails').onclick=()=>setAllTechnicalDetails(false);
-if($('refreshHomeImages'))$('refreshHomeImages').onclick=()=>lessons[0]&&refreshLessonImages(lessons[0],'homeGallery','refreshHomeImages');
+if($('refreshHomeImages'))$('refreshHomeImages').onclick=()=>{const l=lessons.find(x=>!isWeeklyReport(x));if(l)refreshLessonImages(l,'homeGallery','refreshHomeImages')};
 if($('refreshModalImages'))$('refreshModalImages').onclick=()=>activeLesson&&refreshLessonImages(activeLesson,'modalGallery','refreshModalImages');
 function renderQuiz(l){
  const qs=parseQuiz(l.raw_text);if(!qs.length){$('modalQuiz').innerHTML='<div class="card cardPad small">Quiz non disponible.</div>';return}
@@ -327,7 +327,7 @@ function ensureWeeklyReportsUI(){
      const s=document.createElement('section');s.id='view-weekly-reports';s.className='view hidden';
      s.innerHTML='<div class="viewBackRow"><button class="btn backTodayBtn weeklyBack" type="button" aria-label="Retour" title="Retour">←</button></div><div class="card cardPad"><div class="eyebrow">Veille ARIZONA</div><h2>Bilans hebdomadaires</h2><div class="small">Synthèses professionnelles séparées des fiches minérales quotidiennes.</div></div><div id="weeklyReportsList" class="list" style="margin-top:14px"></div>';
      main.appendChild(s);
-     s.querySelector('.weeklyBack').onclick=()=>showViewById('today');
+     s.querySelector('.weeklyBack').onclick=()=>showViewById('home');
    }
  }
  if(!$('weeklyReportsMenuBtn')){
@@ -343,11 +343,16 @@ function ensureWeeklyReportsUI(){
  }
 }
 function showViewById(name){
- const target=$('view-'+name)||$('view-today');
+ const target=$('view-'+name)||$('view-home');
  document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
  if(target)target.classList.remove('hidden');
  if(typeof setMenuOpen==='function')setMenuOpen(false);
  window.scrollTo({top:0,behavior:'smooth'});
+}
+function wireWeeklyReportsNavigation(){
+ const b=$('weeklyReportsMenuBtn');
+ if(b){b.onclick=e=>{e.preventDefault();showWeeklyReportsView()}}
+ document.querySelectorAll('#view-weekly-reports .weeklyBack').forEach(x=>x.onclick=()=>showViewById('home'));
 }
 function showWeeklyReportsView(){
  ensureWeeklyReportsUI();renderWeeklyReports();showViewById('weekly-reports');
