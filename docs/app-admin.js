@@ -317,14 +317,26 @@ document.addEventListener('keydown',e=>{
   if(arizonaBack())e.preventDefault();
 });
 
-// Sur Android/tablette/PWA, le bouton Retour du système suit la même hiérarchie.
-// Un état sentinelle empêche la fermeture immédiate de l'application tant qu'ARIZONA peut remonter d'un niveau.
+// Android/tablette/PWA : chaque pression Retour doit produire exactement
+// le même résultat qu'une pression sur Échap, y compris 2, 3 fois de suite.
+// Deux sentinelles alternées garantissent qu'il reste toujours un niveau
+// d'historique à consommer sans dépendre du timing de pushState après popstate.
 if(history&&history.pushState){
   history.replaceState({...history.state,arizonaRoot:true},'',location.href);
-  history.pushState({arizonaGuard:true},'',location.href);
+  history.pushState({arizonaGuard:1},'',location.href);
+  history.pushState({arizonaGuard:2},'',location.href);
+  let azBackRepair=false;
   window.addEventListener('popstate',()=>{
-    if(arizonaBack()){
-      history.pushState({arizonaGuard:true},'',location.href);
+    if(azBackRepair)return;
+    const handled=arizonaBack();
+    if(handled){
+      azBackRepair=true;
+      // Reconstitue immédiatement les deux niveaux de garde.
+      // Le premier replace l'état courant, le second devient le prochain
+      // niveau consommé par le bouton Retour Android.
+      history.replaceState({...history.state,arizonaGuard:1},'',location.href);
+      history.pushState({arizonaGuard:2},'',location.href);
+      queueMicrotask(()=>{azBackRepair=false});
     }
   });
 }
