@@ -302,14 +302,12 @@ function arizonaBack(){
     if(activeSub&&activeSub.id!=='admin-dashboard'){switchAdmin('dashboard');return true}
   }
 
-  // Sous-niveaux internes : Projet -> aperçu, puis vue parente.
   const current=[...document.querySelectorAll('.view')].find(v=>!v.classList.contains('hidden'));
   if(current?.id==='view-projects'&&typeof activeProjectTabV215!=='undefined'&&activeProjectTabV215!=='overview'){
     activeProjectTabV215='overview';
     if(typeof renderProjectWorkspaceV215==='function')renderProjectWorkspaceV215();
     return true;
   }
-
   if(current&&current.id!=='view-home'){switchView('home');return true}
   return false;
 }
@@ -317,19 +315,23 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&arizonaBack())e.preventDefault();
 });
 
-// Android/PWA : on utilise une barrière d'historique réarmée AVANT chaque retour.
-// Cela évite le défaut précédent où la 2e pression n'avait plus d'entrée à consommer.
-let azBackGuardReady=false;
-function armArizonaBackGuard(){
-  if(!history?.pushState||azBackGuardReady)return;
-  history.pushState({...(history.state||{}),azBackGuard:true,azBackNonce:Date.now()},'',location.href);
-  azBackGuardReady=true;
+// Android/PWA : pile de garde profonde.
+// Le navigateur consomme UNE entrée par pression Retour. Chaque entrée restante
+// déclenche donc arizonaBack(), exactement comme des pressions Échap successives.
+// On ne repousse plus d'état dans popstate : c'était la cause des retours 2/3 instables.
+const AZ_BACK_DEPTH=16;
+function seedArizonaBackStack(){
+  if(!history?.pushState)return;
+  const st=history.state||{};
+  if(st.azBackSeed)return;
+  history.replaceState({...st,azBackSeed:true,azBackLevel:0},'',location.href);
+  for(let i=1;i<=AZ_BACK_DEPTH;i++){
+    history.pushState({azBackSeed:true,azBackLevel:i},'',location.href);
+  }
 }
-armArizonaBackGuard();
-window.addEventListener('popstate',()=>{
-  azBackGuardReady=false;
-  if(arizonaBack()){
-    // Réarmement synchrone : la prochaine pression Android est immédiatement disponible.
-    armArizonaBackGuard();
+seedArizonaBackStack();
+window.addEventListener('popstate',e=>{
+  if(e.state?.azBackSeed){
+    arizonaBack();
   }
 });
