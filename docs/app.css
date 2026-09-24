@@ -1559,3 +1559,6 @@ body.menuOpen{overflow:hidden}
 
 .v217LoadMore{display:block;margin:12px auto 2px}
 .v217ListNote{padding:10px 2px;text-align:center}
+
+/* Weekly engineering dashboard */
+.weeklyKpis{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.weeklyKpis span{padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.weeklyKpis small{display:block;opacity:.72;margin-top:2px}.weeklyChips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.weeklyChips span{font-size:12px;padding:5px 9px;border-radius:999px;border:1px solid var(--line)}.weeklyDashboard{display:grid;gap:14px}.weeklyHero,.weeklyPanel{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}.weeklyHero h2{margin:5px 0 8px}.weeklyKpisLarge span{min-width:110px}.weeklyTableWrap{overflow-x:auto}.weeklyTable{width:100%;border-collapse:collapse;min-width:480px}.weeklyTable th,.weeklyTable td{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}.weeklyColumns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.weeklyColumns>div{padding:12px;border:1px solid var(--line);border-radius:12px}.weeklyPanel p,.weeklyHero p{white-space:pre-line;line-height:1.55}@media(max-width:760px){.weeklyColumns{grid-template-columns:1fr}.weeklyKpisLarge{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
