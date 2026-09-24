@@ -1603,3 +1603,21 @@ body.menuOpen{overflow:hidden}
 #weeklyDashboardBody .weeklyTable th:first-child{z-index:3;background:var(--panel)!important}
 .azImageUnavailable{width:100%;min-height:180px;display:grid;place-content:center;text-align:center;gap:4px;border:1px dashed var(--line);border-radius:14px;background:var(--soft);color:var(--muted)}
 .azImageUnavailable span{font-size:12px;font-weight:700}.azImageUnavailable small{font-size:10px}
+
+/* V21.16 weekly mobile tables: readable cards instead of squeezed columns */
+@media(max-width:760px){
+ #weeklyDashboardBody .weeklyTableWrap{overflow:visible}
+ #weeklyDashboardBody .weeklyTable{display:block;min-width:0;width:100%;font-size:13px}
+ #weeklyDashboardBody .weeklyTable thead{display:none}
+ #weeklyDashboardBody .weeklyTable tbody{display:grid;gap:10px}
+ #weeklyDashboardBody .weeklyTable tr{display:grid;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+ #weeklyDashboardBody .weeklyTable td{position:static!important;display:grid;grid-template-columns:105px minmax(0,1fr);gap:10px;min-width:0!important;max-width:none!important;width:100%;padding:7px 0;border:0;border-bottom:1px solid var(--line);background:transparent!important;overflow-wrap:anywhere}
+ #weeklyDashboardBody .weeklyTable td:last-child{border-bottom:0}
+ #weeklyDashboardBody .weeklyTable td:before{content:"Donnée";font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gold2)}
+ #weeklyDashboardBody .weeklyTable td:first-child{display:block;padding:0 0 9px;margin-bottom:2px;border-bottom:1px solid var(--line);font-size:17px}
+ #weeklyDashboardBody .weeklyTable td:first-child:before{content:none}
+ #weeklyDashboardBody .weeklyTable td:nth-child(2):before{content:"Géologie"}
+ #weeklyDashboardBody .weeklyTable td:nth-child(3):before{content:"Exploitation"}
+ #weeklyDashboardBody .weeklyTable td:nth-child(4):before{content:"Traitement"}
+ #weeklyDashboardBody .weeklyTable td:nth-child(5):before{content:"Produit / lecture"}
+}
