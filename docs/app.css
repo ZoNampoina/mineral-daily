@@ -1596,3 +1596,10 @@ body.menuOpen{overflow:hidden}
 
 /* Weekly table sticky first-column readability */
 @media(max-width:760px){#weeklyDashboardBody .weeklyTable th:first-child{background:var(--panel)!important;box-shadow:1px 0 0 var(--line),8px 0 14px rgba(0,0,0,.06)}#weeklyDashboardBody .weeklyTable td:first-child{background:var(--card)!important;box-shadow:1px 0 0 var(--line),8px 0 14px rgba(0,0,0,.04)}}
+
+/* V21.17 sticky first column: every row, desktop + mobile */
+#weeklyDashboardBody .weeklyTable th:first-child,
+#weeklyDashboardBody .weeklyTable td:first-child{position:sticky;left:0;z-index:2;background:var(--card)!important;border-right:1px solid var(--line);box-shadow:7px 0 12px rgba(0,0,0,.045)}
+#weeklyDashboardBody .weeklyTable th:first-child{z-index:3;background:var(--panel)!important}
+.azImageUnavailable{width:100%;min-height:180px;display:grid;place-content:center;text-align:center;gap:4px;border:1px dashed var(--line);border-radius:14px;background:var(--soft);color:var(--muted)}
+.azImageUnavailable span{font-size:12px;font-weight:700}.azImageUnavailable small{font-size:10px}
