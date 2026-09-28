@@ -239,6 +239,7 @@ function renderHome(){
  const scores=[...progress.values()].map(x=>Number(x.score||0));$('avgQuiz').textContent=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)+'/3':'—';
  if(!l){$('todayName').textContent='Aucune fiche';$('todaySummary').textContent='Aucune fiche publiée.';return}
  $('todayName').textContent=l.name;$('todayDate').textContent=formatDate(l.lesson_date);$('todaySymbol').textContent=compactSymbol(l);$('todaySummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');
+ if(typeof renderDailyAudio==='function')renderDailyAudio(l,'todayAudioSlot');
  fillGallery('homeGallery',l)
 }
 function lessonCard(l,admin=false){
@@ -293,7 +294,7 @@ async function toggleFavorite(id){
 async function openLesson(id){
  const l=lessons.find(x=>Number(x.id)===Number(id));if(!l)return;activeLesson=l;if(typeof azTrackRecentlyViewed==='function')azTrackRecentlyViewed(id);recordUsageEvent('view_lesson','lesson',l.id,{lesson_name:l.name,symbol:compactSymbol(l)});$('lessonModal').classList.add('open');
  $('modalName').textContent=l.name+' · '+compactSymbol(l);$('modalDate').textContent=formatDate(l.lesson_date);$('modalFav').textContent=favorites.has(Number(l.id))?'★':'☆';
- $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');await fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l);if(typeof renderLessonExtras==='function')renderLessonExtras(l);if(typeof renderLessonV20==='function')renderLessonV20(l);if(typeof renderLessonIntelligence==='function')renderLessonIntelligence(l)
+ $('modalSummary').textContent=section(l.raw_text,'RÉSUMÉ EXÉCUTIF');if(typeof renderDailyAudio==='function')renderDailyAudio(l,'modalAudioSlot');await fillGallery('modalGallery',l);renderDetails(l);renderQuiz(l);if(typeof renderLessonExtras==='function')renderLessonExtras(l);if(typeof renderLessonV20==='function')renderLessonV20(l);if(typeof renderLessonIntelligence==='function')renderLessonIntelligence(l)
 }
 function renderDetails(l){
  const raw=l.raw_text;let html='';
