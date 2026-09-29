@@ -171,6 +171,7 @@ async function azGeneratePremium(l,mode,script){
   const p=azProfile(),voice=azPremiumVoice();
   const {data,error}=await sb.functions.invoke('arizona-tts',{body:{
     action:'generate',lesson_id:l.id,mode,text:script,
+    profile:azAudioSettings.profile,
     voice_id:voice?.voice_id||undefined,
     stability:p.stability,similarity_boost:p.similarity_boost,style:p.style,speed:1
   }});
