@@ -1648,3 +1648,64 @@ body.menuOpen{overflow:hidden}
  .azAudioRates{width:100%;margin-left:0;display:grid;grid-template-columns:repeat(4,1fr)}
  .azAudioRate{width:100%;min-width:0}
 }
+
+
+/* === ARIZONA V21.10 · Fiches vocales === */
+.azVoiceHero{display:grid;gap:12px}
+.azVoiceHero h2{margin:3px 0 0}
+.azVoiceSettings{margin-top:4px}
+.azVoiceSettingsGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.azVoiceSettingsGrid label{display:grid;gap:5px}
+.azVoiceSettingsGrid label>span{font-size:9px;color:var(--muted);font-weight:700}
+.azVoiceSettingsGrid .azVoiceChoice{grid-column:span 2}
+.azVoiceSettingsGrid .azBgToggle{grid-column:span 2;display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;background:var(--soft)}
+.azVoiceSettingsGrid .azBgToggle>span{display:grid;gap:2px;color:var(--text)}
+.azVoiceSettingsGrid .azBgToggle b{font-size:11px}
+.azVoiceSettingsGrid .azBgToggle small{font-size:9px;color:var(--muted);line-height:1.35}
+.azVoiceSupport{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.azVoiceNowPlaying{margin:12px 0}
+.azVoiceNowPlaying:empty{display:none}
+.azVoiceNowCard{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.azVoiceNowCard h3{margin:3px 0}
+.azVoiceNowActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.azVoiceSearchRow{margin:12px 0 10px}
+.azVoiceLibrary{display:grid;gap:8px}
+.azVoiceCard{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:11px 12px}
+.azVoiceCardMain{display:flex;align-items:center;gap:10px;min-width:0}
+.azVoiceCardMain>div:last-child{display:grid;gap:2px;min-width:0}
+.azVoiceCardMain b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.azVoiceCardMain small{font-size:9px;color:var(--muted)}
+.azVoiceGlyph{width:32px;height:32px;min-width:32px;border-radius:50%;display:grid;place-items:center;background:var(--soft);border:1px solid var(--line);font-size:17px}
+.azVoiceCardActions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.azVoiceCardActions .btn{font-size:9px;padding:7px 8px}
+.azAudioModes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.azAudioMode{font-size:9px;padding:7px 6px}
+.azAudioMode.active{border-color:var(--gold2);color:var(--gold2)}
+.azAudioSettingsBtn{width:34px;height:32px;padding:0;display:grid;place-items:center}
+.azAudioMiniBar{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:150;width:min(720px,calc(100vw - 24px));display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:15px;background:var(--panel);box-shadow:0 14px 42px rgba(0,0,0,.28)}
+.azAudioMiniBar.hidden{display:none}
+.azMiniMeta{display:grid;gap:2px;min-width:0}
+.azMiniMeta b{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.azMiniMeta small{font-size:9px;color:var(--muted)}
+.azMiniControls{display:flex;align-items:center;gap:5px}
+.azMiniControls .btn{min-width:34px;padding:7px 8px;font-size:9px}
+@media(max-width:820px){
+ .azVoiceSettingsGrid{grid-template-columns:1fr 1fr}
+ .azVoiceSettingsGrid .azVoiceChoice,.azVoiceSettingsGrid .azBgToggle{grid-column:span 2}
+}
+@media(max-width:620px){
+ .azVoiceCard{grid-template-columns:1fr}
+ .azVoiceCardActions{justify-content:stretch}
+ .azVoiceCardActions .btn{flex:1}
+ .azVoiceNowCard{display:grid}
+ .azVoiceNowActions .btn{flex:1}
+ .azAudioMiniBar{bottom:max(8px,env(safe-area-inset-bottom));display:grid;grid-template-columns:minmax(0,1fr) auto;padding:9px 10px}
+ .azMiniControls .btn{padding:7px 6px}
+}
+@media(max-width:460px){
+ .azVoiceSettingsGrid{grid-template-columns:1fr}
+ .azVoiceSettingsGrid .azVoiceChoice,.azVoiceSettingsGrid .azBgToggle{grid-column:auto}
+ .azAudioMiniBar{grid-template-columns:1fr}
+ .azMiniControls{width:100%;display:grid;grid-template-columns:repeat(4,1fr)}
+ .azMiniControls .btn{width:100%}
+}
