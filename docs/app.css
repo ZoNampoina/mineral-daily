@@ -1709,3 +1709,16 @@ body.menuOpen{overflow:hidden}
  .azMiniControls{width:100%;display:grid;grid-template-columns:repeat(4,1fr)}
  .azMiniControls .btn{width:100%}
 }
+
+
+/* === ARIZONA V21.11 · Premium neural audio === */
+.azVoiceStatus{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.azVoiceStatus b{font-size:11px}
+.azVoiceStatus span{font-size:9px;font-weight:800;padding:4px 7px;border:1px solid var(--line);border-radius:999px}
+.azVoiceStatus small{grid-column:1/-1;font-size:9px;color:var(--muted);line-height:1.4}
+.azVoiceStatus.ok{border-color:color-mix(in srgb,var(--gold2) 45%,var(--line))}
+.azVoiceStatus.ok span{color:var(--gold2);border-color:var(--gold2)}
+.azVoiceStatus.warn span{color:var(--muted)}
+.azVoiceSelectRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.azVoiceSelectRow .btn{white-space:nowrap}
+@media(max-width:520px){.azVoiceSelectRow{grid-template-columns:1fr}.azVoiceSelectRow .btn{width:100%}}
