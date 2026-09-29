@@ -23,6 +23,7 @@ function azAudioLoadSettings(){
 }
 const azAudioSettings=azAudioLoadSettings();
 const azAudioState={lessonId:null,lesson:null,mode:'daily',script:'',chunks:[],index:0,playing:false,paused:false,utterance:null};
+let azAudioCarrier=null,azAudioCarrierUrl=null;
 
 function azAudioSaveSettings(){try{localStorage.setItem(AZ_AUDIO_SETTINGS_KEY,JSON.stringify(azAudioSettings))}catch{}}
 function azLocalISODate(){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
@@ -136,6 +137,7 @@ function azAudioRefreshUI(){
     if(play)play.textContent=same&&azAudioState.playing?(azAudioState.paused?'▶':'Ⅱ'):'▶';
     if(bar)bar.style.width=(same?p:0)+'%';if(pct)pct.textContent=(same?p:0)+'%';
     box.querySelectorAll('[data-audio-mode]').forEach(b=>b.classList.toggle('active',(same?azAudioState.mode:'daily')===b.dataset.audioMode));
+    box.querySelectorAll('[data-audio-speed]').forEach(b=>b.classList.toggle('active',Number(b.dataset.audioSpeed)===Number(azAudioSettings.speed)));
     const label=box.querySelector('[data-audio-voice-label]');if(label)label.textContent=(voice?.name||profile.label);
   });
   const mini=azAudioEnsureMiniBar();
@@ -153,8 +155,23 @@ function azAudioRefreshUI(){
   }
 }
 
+function azAudioMakeSilentWav(){
+  if(azAudioCarrierUrl)return azAudioCarrierUrl;
+  const rate=8000,samples=rate,buffer=new ArrayBuffer(44+samples*2),v=new DataView(buffer);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+samples*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,samples*2,true);
+  azAudioCarrierUrl=URL.createObjectURL(new Blob([buffer],{type:'audio/wav'}));return azAudioCarrierUrl;
+}
+function azAudioStartCarrier(){
+  if(!azAudioSettings.background)return;
+  if(!azAudioCarrier){azAudioCarrier=new Audio(azAudioMakeSilentWav());azAudioCarrier.loop=true;azAudioCarrier.volume=.001;azAudioCarrier.setAttribute('playsinline','')}
+  try{azAudioCarrier.play().catch(()=>{})}catch{}
+}
+function azAudioStopCarrier(){if(azAudioCarrier){try{azAudioCarrier.pause();azAudioCarrier.currentTime=0}catch{}}}
+
 function azAudioMediaSetup(){
   if(!('mediaSession'in navigator)||!azAudioState.lesson||!azAudioSettings.background)return;
+  azAudioStartCarrier();
   const l=azAudioState.lesson;
   try{navigator.mediaSession.metadata=new MediaMetadata({title:l.name+' — '+AZ_AUDIO_MODES[azAudioState.mode].label,artist:'ARIZONA · Fiche vocale',album:'Ingénierie minière',artwork:[{src:'./icon.svg',sizes:'512x512',type:'image/svg+xml'}]})}catch{}
   const actions={
@@ -169,6 +186,7 @@ function azAudioMediaSetup(){
   for(const [action,handler] of Object.entries(actions)){try{navigator.mediaSession.setActionHandler(action,handler)}catch{}}
 }
 function azAudioMediaClear(){
+  azAudioStopCarrier();
   if(!('mediaSession'in navigator))return;
   for(const a of ['play','pause','stop','seekbackward','seekforward','previoustrack','nexttrack'])try{navigator.mediaSession.setActionHandler(a,null)}catch{}
   try{navigator.mediaSession.metadata=null;navigator.mediaSession.playbackState='none'}catch{}
@@ -280,7 +298,7 @@ function renderVoiceLibrary(){
   list.innerHTML=arr.map(l=>`<article class="card azVoiceCard"><div class="azVoiceCardMain"><div class="azVoiceGlyph">◖</div><div><b>${esc(l.name)}</b><small>${esc(formatDate(l.lesson_date))} · ${esc(compactSymbol(l))}</small></div></div><div class="azVoiceCardActions">${Object.entries(AZ_AUDIO_MODES).map(([k,m])=>`<button class="btn ${k==='daily'?'primary':''}" data-voice-play="${l.id}" data-voice-mode="${k}">${m.minutes} min</button>`).join('')}</div></article>`).join('')||'<div class="card cardPad small">Aucune fiche vocale correspondante.</div>';
   list.querySelectorAll('[data-voice-play]').forEach(b=>b.onclick=()=>azAudioPrepareAndStart(lessons.find(l=>Number(l.id)===Number(b.dataset.voicePlay)),b.dataset.voiceMode).catch(console.error));
 }
-function onArizonaAudioViewChange(v){if(v==='voice')renderVoiceLibrary()}
+function onArizonaAudioViewChange(v){if(v==='voice'){renderVoiceLibrary();const q=$('azVoiceSearch');if(q&&!q.dataset.azBound){q.dataset.azBound='1';q.addEventListener('input',renderVoiceLibrary)}}}
 
 if('speechSynthesis'in window){
   const refresh=()=>{renderVoiceSettings();azAudioRefreshUI()};
