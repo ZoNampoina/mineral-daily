@@ -25,7 +25,7 @@ function azAudioPart(raw,h,max,label){
 }
 function buildDailyAudioScript(l){
   if(!l)return'';
-  const cacheKey='az_audio_script_v2_'+l.id+'_'+String(l.updated_at||l.lesson_date||'');
+  const cacheKey='az_audio_script_v3_'+l.id+'_'+String(l.updated_at||l.lesson_date||'');
   try{const cached=localStorage.getItem(cacheKey);if(cached)return cached}catch{}
   const raw=String(l.raw_text||'');
   const parts=[
@@ -119,13 +119,26 @@ function startDailyAudio(l){
   azAudioState.lessonId=Number(l.id);azAudioState.script=script;azAudioState.chunks=azAudioChunks(script);azAudioState.index=0;azAudioState.playing=true;azAudioState.paused=false;
   azAudioSpeakNext();
 }
-function toggleDailyAudio(l){
+async function toggleDailyAudio(l){
   const same=Number(azAudioState.lessonId)===Number(l.id);
   if(same&&azAudioState.playing){
     if(azAudioState.paused){speechSynthesis.resume();azAudioState.paused=false}else{speechSynthesis.pause();azAudioState.paused=true}
     azAudioRefreshUI();return;
   }
-  startDailyAudio(l);
+  let full=l;
+  if(String(full?.raw_text||'').length<500&&typeof ensureLessonDetail==='function'){
+    const run=()=>ensureLessonDetail(full.id);
+    try{
+      full=typeof withLoading==='function'
+        ?await withLoading('Préparation du résumé audio…',run,{delay:80,subtitle:'Chargement de la fiche complète.'})
+        :await run();
+    }catch(e){
+      console.error(e);
+      if(typeof toast==='function')toast('Impossible de préparer le résumé audio.');
+      return;
+    }
+  }
+  startDailyAudio(full);
 }
 function stopDailyAudio(){
   if('speechSynthesis'in window)speechSynthesis.cancel();
@@ -142,7 +155,9 @@ function setDailyAudioRate(l,rate){
 function renderDailyAudio(l,targetId){
   const box=$(targetId);if(!box)return;
   if(!azAudioIsToday(l)){box.innerHTML='';return}
-  const script=buildDailyAudioScript(l),duration=azAudioDuration(script,1),supported='speechSynthesis'in window;
+  const hasDetail=String(l?.raw_text||'').length>=500;
+  const script=hasDetail?buildDailyAudioScript(l):'';
+  const duration=hasDetail?azAudioDuration(script,1):'~5 min',supported='speechSynthesis'in window;
   box.innerHTML=`<div class="azAudioPlayer" data-az-audio-player data-lesson-id="${Number(l.id)}">
     <div class="azAudioHead"><div><div class="eyebrow">Résumé audio</div><b>${esc(l.name)} · ${duration}</b></div><span class="azAudioVoice">${supported?'Voix française appareil':'Audio indisponible'}</span></div>
     <div class="azAudioControls">
@@ -153,7 +168,7 @@ function renderDailyAudio(l,targetId){
     <div class="azAudioProgressRow"><div class="azAudioTrack"><i data-audio-progress></i></div><span data-audio-pct>0%</span></div>
     <div class="small azAudioNote">Briefing automatique d’environ 5 min · script conservé sur l’appareil.</div>
   </div>`;
-  box.querySelector('[data-audio-play]')?.addEventListener('click',()=>toggleDailyAudio(l));
+  box.querySelector('[data-audio-play]')?.addEventListener('click',()=>{toggleDailyAudio(l).catch?.(console.error)});
   box.querySelector('[data-audio-stop]')?.addEventListener('click',stopDailyAudio);
   box.querySelectorAll('[data-audio-rate]').forEach(b=>b.addEventListener('click',()=>setDailyAudioRate(l,b.dataset.audioRate)));
   azAudioRefreshUI();
