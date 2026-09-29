@@ -201,6 +201,7 @@ function renderHome(){
   const scores=[...progress.values()].map(x=>Number(x.score||0));$('avgQuiz').textContent=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)+'/3':'—';
   if(!l){$('todayName').textContent='Aucune fiche';$('todaySummary').textContent='Aucune fiche publiée.';return}
   $('todayName').textContent=l.name;$('todayDate').textContent=formatDate(l.lesson_date);$('todaySymbol').textContent=compactSymbol(l);$('todaySummary').textContent=lessonSummaryV217(l)||'Ouvrir la fiche pour consulter le résumé.';
+  if(typeof renderDailyAudio==='function')renderDailyAudio(l,'todayAudioSlot');
   fillGallery('homeGallery',l);
 }
 function lessonCard(l,admin=false){
@@ -255,7 +256,7 @@ async function openLesson(id){
     recordUsageEvent('view_lesson','lesson',l.id,{lesson_name:l.name,symbol:compactSymbol(l)});
     $('lessonModal').classList.add('open');
     $('modalName').textContent=l.name+' · '+compactSymbol(l);$('modalDate').textContent=formatDate(l.lesson_date);$('modalFav').textContent=favorites.has(Number(l.id))?'★':'☆';
-    $('modalSummary').textContent=lessonSummaryV217(l);renderDetails(l);renderQuiz(l);
+    $('modalSummary').textContent=lessonSummaryV217(l);if(typeof renderDailyAudio==='function')renderDailyAudio(l,'modalAudioSlot');renderDetails(l);renderQuiz(l);
     if(typeof renderLessonExtras==='function')renderLessonExtras(l);
     if(typeof renderLessonV20==='function')renderLessonV20(l);
     if(typeof renderLessonIntelligence==='function')renderLessonIntelligence(l);
