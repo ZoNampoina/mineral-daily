@@ -307,7 +307,7 @@ function renderDailyAudio(l,targetId){
     <div class="azAudioModes">${Object.entries(AZ_AUDIO_MODES).map(([k,m])=>`<button class="btn azAudioMode ${k==='daily'?'active':''}" data-audio-mode="${k}">${esc(m.label)}</button>`).join('')}</div>
     <div class="azAudioControls"><button class="btn primary azAudioPlay" data-audio-play>▶</button><button class="btn" data-audio-back>−15</button><button class="btn" data-audio-forward>+15</button><button class="btn azAudioStop" data-audio-stop>■</button><div class="azAudioRates">${[.75,1,1.25,1.5].map(r=>`<button class="btn azAudioRate ${azAudioSettings.speed===r?'active':''}" data-audio-speed="${r}">${String(r).replace('.',',')}×</button>`).join('')}</div></div>
     <div class="azAudioProgressRow"><div class="azAudioTrack"><i data-audio-progress></i></div><span data-audio-pct>0%</span></div>
-    <div class="small azAudioNote">ARIZONA utilise en priorité un MP3 neuronal documentaire quand le moteur premium est configuré.</div>
+    <div class="small azAudioNote">ARIZONA utilise en priorité un MP3 neuronal documentaire quand le moteur premium est configuré. Voix générée par IA.</div>
   </div>`;
   let mode='daily';
   box.querySelectorAll('[data-audio-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.audioMode;box.querySelectorAll('[data-audio-mode]').forEach(x=>x.classList.toggle('active',x===b))});
