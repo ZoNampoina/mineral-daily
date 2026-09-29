@@ -203,6 +203,7 @@ async function switchView(v){
  if(typeof onEngineerViewChange==='function')await onEngineerViewChange(v);
  if(typeof onArizonaV21ViewChange==='function')await onArizonaV21ViewChange(v);
  if(typeof onArizonaV215ViewChange==='function')await onArizonaV215ViewChange(v);
+ if(typeof onArizonaAudioViewChange==='function')await onArizonaAudioViewChange(v);
  if(typeof setMenuOpen==='function')setMenuOpen(false)
 }
 function switchAdmin(sub){
