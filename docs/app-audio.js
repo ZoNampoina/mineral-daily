@@ -1,4 +1,4 @@
-// ARIZONA V21.14 · Documentary Premium segmented audio
+// ARIZONA V21.15 · Premium availability diagnostics
 const AZ_AUDIO_MODES={
   short:{label:'Résumé 2 min',minutes:2,maxWords:300},
   daily:{label:'Quotidien 5 min',minutes:5,maxWords:720},
@@ -27,7 +27,7 @@ function azLoadAudioSettings(){
   }catch{return{profile:'documentary',source:'auto',premiumVoiceId:'',localVoiceURI:'',speed:1,background:true}}
 }
 const azAudioSettings=azLoadAudioSettings();
-const azPremium={checked:false,configured:false,voices:[],loading:false,error:''};
+const azPremium={checked:false,configured:false,providers:{openai:false,elevenlabs:false},preferred:null,voices:[],loading:false,error:''};
 const azAudioState={
   lessonId:null,lesson:null,mode:'daily',script:'',engine:null,
   playing:false,paused:false,
@@ -96,7 +96,11 @@ async function azPremiumStatus(force=false){
   if(azPremium.checked&&!force)return azPremium.configured;
   try{
     const {data,error}=await sb.functions.invoke('arizona-tts',{body:{action:'status'}});
-    azPremium.checked=true;azPremium.configured=!error&&!!data?.configured;azPremium.error=error?.message||data?.error||'';
+    azPremium.checked=true;
+    azPremium.configured=!error&&!!data?.configured;
+    azPremium.providers=data?.providers||{openai:false,elevenlabs:false};
+    azPremium.preferred=data?.preferred||null;
+    azPremium.error=error?.message||data?.error||'';
   }catch(e){azPremium.checked=true;azPremium.configured=false;azPremium.error=String(e?.message||e)}
   return azPremium.configured;
 }
@@ -137,9 +141,9 @@ function azLocalVoice(){
 function azProfile(){return AZ_AUDIO_PROFILES[azAudioSettings.profile]||AZ_AUDIO_PROFILES.documentary}
 
 async function azResolveEngine(){
-  const premium=await azPremiumStatus();
+  const premium=await azPremiumStatus(true);
   if(azAudioSettings.source==='local')return'local';
-  if(azAudioSettings.source==='premium')return premium?'premium':'local';
+  if(azAudioSettings.source==='premium')return premium?'premium':'premium-unavailable';
   return premium?'premium':'local';
 }
 
@@ -299,12 +303,25 @@ async function azAudioPrepareAndStart(l,mode='daily'){
     catch(e){console.error(e);toast?.('Impossible de préparer cette fiche vocale.');return}
   }
   const script=buildAudioScript(full,mode),engine=await azResolveEngine();
+  if(engine==='premium-unavailable'){
+    toast?.('Premium indisponible : aucun moteur vocal premium n’est connecté. Ouvre Fiches vocales > Réglages pour voir le diagnostic.');
+    try{switchView?.('voice')}catch{}
+    renderVoiceSettings().catch(console.warn);
+    return;
+  }
   if(engine==='premium'){
     try{
       const run=()=>azGeneratePremium(full,mode,script);
       const result=typeof withLoading==='function'?await withLoading('Génération documentaire…',run,{delay:120,subtitle:'Création ou récupération du fichier audio premium.'}):await run();
       azStartPremiumMedia(full,mode,script,result);return;
-    }catch(e){console.warn('Premium TTS fallback',e);toast?.('Voix premium indisponible : utilisation de la voix appareil.')}
+    }catch(e){
+      console.warn('Premium TTS error',e);
+      if(azAudioSettings.source==='premium'){
+        toast?.('Échec du moteur premium. Aucune voix locale ne sera substituée.');
+        return;
+      }
+      toast?.('Premium indisponible : bascule en voix appareil (mode Auto).');
+    }
   }
   azStartLocal(full,mode,script);
 }
@@ -416,9 +433,10 @@ function renderDailyAudio(l,targetId){
 
 async function renderVoiceSettings(){
   const box=$('azVoiceSettings');if(!box)return;
-  await azPremiumStatus();if(azPremium.configured)await azLoadPremiumVoices();
-  const premiumVoice=azPremiumVoice(),localVoice=azLocalVoice(),premiumLabel=azPremium.configured?'Disponible':'Non configuré';
-  box.innerHTML=`<div class="azVoiceStatus ${azPremium.configured?'ok':'warn'}"><b>Audio premium documentaire</b><span>${premiumLabel}</span><small>${azPremium.configured?'MP3 neuronal généré et mis en cache dans Supabase.':'ARIZONA utilisera la voix système tant que la clé du moteur premium n’est pas configurée.'}</small></div>
+  await azPremiumStatus(true);if(azPremium.configured)await azLoadPremiumVoices(true);
+  const premiumVoice=azPremiumVoice(),localVoice=azLocalVoice(),premiumLabel=azPremium.configured?'Disponible':'Bloqué';
+  const providerText='ElevenLabs : '+(azPremium.providers?.elevenlabs?'connecté':'non connecté')+' · OpenAI : '+(azPremium.providers?.openai?'connecté':'non connecté');
+  box.innerHTML=`<div class="azVoiceStatus ${azPremium.configured?'ok':'warn'}"><b>Audio premium documentaire</b><span>${premiumLabel}</span><small>${azPremium.configured?'Moteur premium actif · '+providerText:providerText+' · Aucun moteur premium ne peut générer la nouvelle voix. La voix système n’est utilisée qu’en mode Auto.'}</small><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button id="azPremiumRetry" class="btn" type="button">Retester Premium</button><span class="small">Configuration serveur : Supabase → Edge Functions → Secrets → ELEVENLABS_API_KEY ou OPENAI_API_KEY.</span></div></div>
   <div class="azVoiceSettingsGrid">
     <label><span>Style</span><select id="azVoiceProfile" class="select">${Object.entries(AZ_AUDIO_PROFILES).map(([k,p])=>`<option value="${k}" ${azAudioSettings.profile===k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></label>
     <label><span>Source</span><select id="azVoiceSource" class="select"><option value="auto" ${azAudioSettings.source==='auto'?'selected':''}>Auto · Premium prioritaire</option><option value="premium" ${azAudioSettings.source==='premium'?'selected':''}>Premium neuronal</option><option value="local" ${azAudioSettings.source==='local'?'selected':''}>Voix système / appareil</option></select></label>
@@ -427,6 +445,7 @@ async function renderVoiceSettings(){
     <label><span>Vitesse</span><select id="azVoiceSpeed" class="select">${[.75,1,1.25,1.5].map(v=>`<option value="${v}" ${azAudioSettings.speed===v?'selected':''}>${String(v).replace('.',',')}×</option>`).join('')}</select></label>
     <label class="azBgToggle"><input id="azBackgroundAudio" type="checkbox" ${azAudioSettings.background?'checked':''}><span><b>Lecture arrière-plan</b><small>Notification Android et contrôles écran verrouillé pour les MP3 premium, lorsque le navigateur le permet.</small></span></label>
   </div>`;
+  if($('azPremiumRetry'))$('azPremiumRetry').onclick=async()=>{azPremium.checked=false;azPremium.voices=[];await renderVoiceSettings();toast?.(azPremium.configured?'Premium connecté.':'Toujours aucun moteur premium connecté.');azAudioRefreshUI(false)};
   $('azVoiceProfile').onchange=e=>{azAudioSettings.profile=e.target.value;azSaveAudioSettings()};
   $('azVoiceSource').onchange=e=>{azAudioSettings.source=e.target.value;azSaveAudioSettings();renderVoiceSettings()};
   $('azPremiumVoiceSelect').onchange=e=>{azAudioSettings.premiumVoiceId=e.target.value;azSaveAudioSettings();renderVoiceSettings()};
