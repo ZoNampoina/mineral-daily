@@ -1,1 +1,58 @@
-const CACHE='arizona-v21-25';const CORE=['./','./index.html','./app.css','./app-core.js','./app-audio.js','./app-extras.js','./app-intelligence.js','./app-engineer.js','./app-v20.js','./app-v21.js','./app-v21-5.js','./app-performance.js','./app-admin.js','./weekly-dashboard.js','./app-images.js','./manifest.webmanifest'];self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;let u=new URL(e.request.url);if(u.origin!==location.origin)return;e.respondWith(fetch(e.request).then(r=>{let c=r.clone();caches.open(CACHE).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))))});
+const CACHE='arizona-v21-26';
+const CORE=[
+  './',
+  './index.html',
+  './app.css?v=21.14',
+  './app-core.js?v=21.14',
+  './app-audio.js?v=21.14',
+  './app-extras.js?v=21.14',
+  './app-intelligence.js?v=21.14',
+  './app-engineer.js?v=21.14',
+  './app-v20.js?v=21.14',
+  './app-v21.js?v=21.14',
+  './app-v21-5.js?v=21.14',
+  './app-performance.js?v=21.14',
+  './app-admin.js?v=21.14',
+  './weekly-dashboard.js?v=21.14',
+  './app-images.js?v=21.14',
+  './manifest.webmanifest?v=21.14'
+];
+
+self.addEventListener('install',event=>{
+  event.waitUntil(
+    caches.open(CACHE)
+      .then(cache=>cache.addAll(CORE))
+      .then(()=>self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate',event=>{
+  event.waitUntil(
+    caches.keys()
+      .then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))
+      .then(()=>self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET')return;
+  const url=new URL(event.request.url);
+  if(url.origin!==location.origin)return;
+
+  event.respondWith(
+    fetch(event.request,{cache:'no-store'})
+      .then(response=>{
+        if(response && response.ok){
+          const copy=response.clone();
+          caches.open(CACHE).then(cache=>cache.put(event.request,copy));
+        }
+        return response;
+      })
+      .catch(async()=>{
+        const exact=await caches.match(event.request);
+        if(exact)return exact;
+        if(event.request.mode==='navigate')return caches.match('./index.html');
+        return Response.error();
+      })
+  );
+});

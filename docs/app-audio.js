@@ -1,4 +1,4 @@
-// ARIZONA V21.11 · Premium documentary audio
+// ARIZONA V21.14 · Documentary Premium segmented audio
 const AZ_AUDIO_MODES={
   short:{label:'Résumé 2 min',minutes:2,maxWords:300},
   daily:{label:'Quotidien 5 min',minutes:5,maxWords:720},
