@@ -1,21 +1,21 @@
-const CACHE='arizona-v21-27';
+const CACHE='arizona-v21-28';
 const CORE=[
   './',
   './index.html',
-  './app.css?v=21.15',
-  './app-core.js?v=21.15',
-  './app-audio.js?v=21.15',
-  './app-extras.js?v=21.15',
-  './app-intelligence.js?v=21.15',
-  './app-engineer.js?v=21.15',
-  './app-v20.js?v=21.15',
-  './app-v21.js?v=21.15',
-  './app-v21-5.js?v=21.15',
-  './app-performance.js?v=21.15',
-  './app-admin.js?v=21.15',
-  './weekly-dashboard.js?v=21.15',
-  './app-images.js?v=21.15',
-  './manifest.webmanifest?v=21.15'
+  './app.css?v=21.16',
+  './app-core.js?v=21.16',
+  './app-audio.js?v=21.16',
+  './app-extras.js?v=21.16',
+  './app-intelligence.js?v=21.16',
+  './app-engineer.js?v=21.16',
+  './app-v20.js?v=21.16',
+  './app-v21.js?v=21.16',
+  './app-v21-5.js?v=21.16',
+  './app-performance.js?v=21.16',
+  './app-admin.js?v=21.16',
+  './weekly-dashboard.js?v=21.16',
+  './app-images.js?v=21.16',
+  './manifest.webmanifest?v=21.16'
 ];
 
 self.addEventListener('install',event=>{

@@ -9,8 +9,8 @@ const cors = {
 };
 
 const OPENAI_VOICES = ["cedar","marin","onyx","ash","echo","fable","verse","alloy","ballad","coral","nova","sage","shimmer"];
-const PROMPT_VERSION = "documentary-premium-v1";
-const AUDIO_VERSION = "segments-v1";
+const PROMPT_VERSION = "documentary-premium-v2";
+const AUDIO_VERSION = "segments-v2";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: cors });
@@ -190,7 +190,7 @@ async function generateNarrative(sourceText: string, legacyText: string, mode: s
   const developer = `Tu es le scénariste audio d'ARIZONA, une application professionnelle d'ingénierie minière. Transforme une fiche factuelle en narration française naturelle, conçue pour être écoutée et non lue. N'invente AUCUN fait, chiffre, causalité, exemple, date, lieu ou conclusion absent de la source. Tu peux reformuler, hiérarchiser, expliquer les relations déjà présentes et supprimer les détails secondaires. Évite les longues listes, le style télégraphique, les répétitions et les introductions stéréotypées. Les chiffres importants doivent être contextualisés et faciles à comprendre à l'oral. Les phrases doivent être plutôt courtes et variées. Le ton est celui d'un bon documentaire scientifique: crédible, humain, précis, sans emphase théâtrale. Si la source contient un angle Madagascar pertinent, conserve-le. La conclusion doit laisser 2 à 4 idées mémorables. Ne lis pas les titres de sections de la fiche. Les segments doivent s'enchaîner naturellement.`;
   const user = `Créer le format ${mode} pour « ${lessonName} » (${lessonDate || "date non précisée"}). Vise environ ${budget.target} mots, dans une plage de ${budget.min} à ${budget.max} mots. Utilise ${segmentTarget} segments. Le premier segment doit accrocher sans sensationnalisme. Un segment de rôle "number" doit être utilisé seulement si un chiffre réellement important existe. Le texte de chaque segment doit être immédiatement prononçable par un TTS.\n\nSOURCE FACTUELLE UNIQUE:\n${sourceText}`;
 
-  const candidates = Array.from(new Set([Deno.env.get("ARIZONA_NARRATIVE_MODEL") || "gpt-6.1-sol", "gpt-5.6-sol"]));
+  const candidates = Array.from(new Set([Deno.env.get("ARIZONA_NARRATIVE_MODEL") || "gpt-6.1-sol", "gpt-6-luna"]));
   let lastError = "";
   for (const model of candidates) {
     try {
@@ -291,6 +291,17 @@ async function storeAudio(path: string, audio: Uint8Array) {
   return signed.data.signedUrl;
 }
 
+function classifyTtsError(provider: string, error: unknown) {
+  const raw = String(error instanceof Error ? error.message : error || "");
+  const s = raw.toLowerCase();
+  let code = provider === "elevenlabs" ? "ELEVENLABS_TTS_FAILED" : "OPENAI_TTS_FAILED";
+  if (/insufficient[_ -]?credits|quota|credit balance|not enough credits/.test(s)) code = provider === "elevenlabs" ? "ELEVENLABS_INSUFFICIENT_CREDITS" : "OPENAI_QUOTA";
+  else if (/429|rate[_ -]?limit|too many requests|concurrency/.test(s)) code = provider === "elevenlabs" ? "ELEVENLABS_RATE_LIMIT" : "OPENAI_RATE_LIMIT";
+  else if (/401|unauthorized|invalid api key|incorrect api key/.test(s)) code = provider === "elevenlabs" ? "ELEVENLABS_AUTH" : "OPENAI_AUTH";
+  else if (/403|forbidden|permission|not allowed/.test(s)) code = provider === "elevenlabs" ? "ELEVENLABS_PERMISSION" : "OPENAI_PERMISSION";
+  return { provider, code, detail: raw.slice(0, 900) };
+}
+
 async function generateSegmentAudio(segment: any, provider: string, voiceKey: string, lessonId: string, mode: string) {
   const normalized = normalizeForSpeech(segment.spoken_text);
   const tag = directionTag(segment);
@@ -307,7 +318,11 @@ async function generateSegmentAudio(segment: any, provider: string, voiceKey: st
   const safeId = String(segment.id || "segment").replace(/[^a-zA-Z0-9_-]/g, "_");
   const path = `${lessonId}/${mode}/${PROMPT_VERSION}/${provider}/${voiceKey}/${safeId}-${hash}.mp3`;
   const hit = await cachedAudioUrl(path);
-  if (hit) return { ...segment, spoken_text: normalized, url: hit, cached: true, estimated_seconds: Math.max(8, Math.round(wordCount(normalized) / 2.15)) };
+  if (hit) return {
+    ...segment, spoken_text: normalized, url: hit, cached: true,
+    provider, model_id: provider === "elevenlabs" ? "eleven_v4" : "gpt-4o-mini-tts",
+    estimated_seconds: Math.max(8, Math.round(wordCount(normalized) / 2.15))
+  };
 
   let audio: Uint8Array;
   let model = "";
@@ -320,7 +335,42 @@ async function generateSegmentAudio(segment: any, provider: string, voiceKey: st
     model = "gpt-4o-mini-tts";
   }
   const url = await storeAudio(path, audio);
-  return { ...segment, spoken_text: normalized, url, cached: false, model_id: model, estimated_seconds: Math.max(8, Math.round(wordCount(normalized) / 2.15)) };
+  return {
+    ...segment, spoken_text: normalized, url, cached: false,
+    provider, model_id: model,
+    estimated_seconds: Math.max(8, Math.round(wordCount(normalized) / 2.15))
+  };
+}
+
+async function generateSegmentWithFallback(
+  segment: any,
+  providers: string[],
+  voices: Record<string,string>,
+  lessonId: string,
+  mode: string
+) {
+  const attempts: any[] = [];
+  for (let i = 0; i < providers.length; i++) {
+    const provider = providers[i];
+    const voiceKey = voices[provider];
+    try {
+      const result = await generateSegmentAudio(segment, provider, voiceKey, lessonId, mode);
+      return {
+        ...result,
+        fallback_used: i > 0,
+        primary_provider: providers[0],
+        attempts
+      };
+    } catch (e) {
+      const failure = classifyTtsError(provider, e);
+      attempts.push(failure);
+      console.warn("ARIZONA segment TTS failed", segment?.id, failure.code, failure.detail);
+    }
+  }
+  const err = new Error("ALL_TTS_PROVIDERS_FAILED");
+  (err as any).attempts = attempts;
+  (err as any).segmentId = String(segment?.id || "");
+  throw err;
 }
 
 Deno.serve(async (req: Request) => {
@@ -342,8 +392,13 @@ Deno.serve(async (req: Request) => {
       preferred: status.elevenlabs ? "elevenlabs" : status.openai ? "openai" : null,
       documentary_premium: {
         version: PROMPT_VERSION,
-        narrative: status.openai ? "openai" : "fallback",
+        narrative: status.openai ? "gpt-6.1-sol" : "fallback",
         tts: status.elevenlabs ? "eleven_v4" : status.openai ? "gpt-4o-mini-tts" : null,
+        fallback_chain: [
+          ...(status.elevenlabs ? ["elevenlabs"] : []),
+          ...(status.openai ? ["openai"] : []),
+        ],
+        segment_resume: true,
       },
     });
   }
@@ -380,12 +435,25 @@ Deno.serve(async (req: Request) => {
   if (!sourceText && !legacyText) return json({ error: "Text required" }, 400);
 
   const requestedProvider = String(body?.provider || "auto");
-  const provider = chooseProvider(requestedProvider);
-  if (!provider) return json({ configured: false, providers: status, error: "NO_TTS_PROVIDER" }, 503);
+  const primaryProvider = chooseProvider(requestedProvider);
+  if (!primaryProvider) return json({ configured: false, providers: status, error: "NO_TTS_PROVIDER" }, 503);
 
-  const openaiVoice = String(body?.voice_id || "cedar");
-  const elevenVoice = String(body?.voice_id || Deno.env.get("ELEVENLABS_VOICE_ID") || "JBFqnCBsd6RMkjVDRZzb");
-  const voiceKey = provider === "elevenlabs" ? elevenVoice : openaiVoice;
+  const rawVoice = String(body?.voice_id || "");
+  const openaiVoice = OPENAI_VOICES.includes(String(body?.openai_voice_id || rawVoice))
+    ? String(body?.openai_voice_id || rawVoice)
+    : String(body?.openai_voice_id || Deno.env.get("OPENAI_TTS_VOICE") || "cedar");
+  const elevenVoice = String(body?.elevenlabs_voice_id || rawVoice || Deno.env.get("ELEVENLABS_VOICE_ID") || "JBFqnCBsd6RMkjVDRZzb");
+
+  const providers = requestedProvider === "openai"
+    ? (status.openai ? ["openai"] : status.elevenlabs ? ["elevenlabs"] : [])
+    : [
+        ...(status.elevenlabs ? ["elevenlabs"] : []),
+        ...(status.openai ? ["openai"] : []),
+      ];
+  const voices: Record<string,string> = {
+    elevenlabs: elevenVoice,
+    openai: openaiVoice,
+  };
 
   const sourceHash = await sha256(sourceText);
   const narrativeCacheKey = `${lessonId}:${mode}:${PROMPT_VERSION}:${sourceHash}`;
@@ -395,26 +463,52 @@ Deno.serve(async (req: Request) => {
   try {
     const segments = [];
     for (const segment of (narrative?.segments || [])) {
-      segments.push(await generateSegmentAudio(segment, provider, voiceKey, lessonId, mode));
+      segments.push(await generateSegmentWithFallback(segment, providers, voices, lessonId, mode));
     }
     if (!segments.length) return json({ error: "NO_SEGMENTS" }, 500);
+
+    const providersUsed = Array.from(new Set(segments.map((s: any) => s.provider).filter(Boolean)));
+    const fallbackSegments = segments.filter((s: any) => s.fallback_used);
+    const provider = providersUsed.length > 1 ? "mixed" : (providersUsed[0] || primaryProvider);
+    const modelIds = Array.from(new Set(segments.map((s: any) => s.model_id).filter(Boolean)));
+
     return json({
       configured: true,
       premium: true,
       version: PROMPT_VERSION,
       provider,
-      model_id: provider === "elevenlabs" ? "eleven_v4" : "gpt-4o-mini-tts",
+      providers_used: providersUsed,
+      fallback_chain: providers,
+      fallback_segments: fallbackSegments.map((s: any) => ({
+        id: s.id,
+        role: s.role,
+        provider: s.provider,
+        attempts: s.attempts || [],
+      })),
+      fallback_count: fallbackSegments.length,
+      model_id: modelIds.length > 1 ? "mixed" : (modelIds[0] || ""),
       narrative_model: narrativeResult.model,
       narrative_cached: narrativeResult.cached,
-      voice_id: voiceKey,
+      voice_id: provider === "elevenlabs" ? elevenVoice : provider === "openai" ? openaiVoice : "mixed",
       mode,
       title: narrative?.title || lessonName,
       summary: narrative?.summary || "",
       segments,
       duration_estimate: segments.reduce((n: number, s: any) => n + Number(s.estimated_seconds || 0), 0),
-      cache: { segments_cached: segments.filter((s: any) => s.cached).length, total_segments: segments.length },
+      cache: {
+        segments_cached: segments.filter((s: any) => s.cached).length,
+        total_segments: segments.length,
+        fallback_segments: fallbackSegments.length,
+      },
     });
   } catch (e) {
-    return json({ error: "TTS_FAILED", provider, detail: String(e instanceof Error ? e.message : e).slice(0, 1200) }, 502);
+    const attempts = (e as any)?.attempts || [];
+    return json({
+      error: "TTS_FAILED",
+      failed_segment: (e as any)?.segmentId || null,
+      fallback_chain: providers,
+      attempts,
+      detail: String(e instanceof Error ? e.message : e).slice(0, 1200),
+    }, 502);
   }
 });

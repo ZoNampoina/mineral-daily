@@ -1,4 +1,4 @@
-// ARIZONA V21.15 · Premium availability diagnostics
+// ARIZONA V21.16 · ElevenLabs → OpenAI resilient premium audio
 const AZ_AUDIO_MODES={
   short:{label:'Résumé 2 min',minutes:2,maxWords:300},
   daily:{label:'Quotidien 5 min',minutes:5,maxWords:720},
@@ -27,13 +27,13 @@ function azLoadAudioSettings(){
   }catch{return{profile:'documentary',source:'auto',premiumVoiceId:'',localVoiceURI:'',speed:1,background:true}}
 }
 const azAudioSettings=azLoadAudioSettings();
-const azPremium={checked:false,configured:false,providers:{openai:false,elevenlabs:false},preferred:null,voices:[],loading:false,error:''};
+const azPremium={checked:false,configured:false,providers:{openai:false,elevenlabs:false},preferred:null,documentary:null,voices:[],loading:false,error:''};
 const azAudioState={
   lessonId:null,lesson:null,mode:'daily',script:'',engine:null,
   playing:false,paused:false,
   chunks:[],index:0,utterance:null,
   media:null,url:'',duration:0,currentTime:0,
-  segments:[],segmentIndex:0,prefetch:null,premiumProvider:'',premiumModel:''
+  segments:[],segmentIndex:0,prefetch:null,premiumProvider:'',premiumModel:'',premiumProviders:[],fallbackCount:0
 };
 let azPreviewAudio=null;
 
@@ -100,6 +100,7 @@ async function azPremiumStatus(force=false){
     azPremium.configured=!error&&!!data?.configured;
     azPremium.providers=data?.providers||{openai:false,elevenlabs:false};
     azPremium.preferred=data?.preferred||null;
+    azPremium.documentary=data?.documentary_premium||null;
     azPremium.error=error?.message||data?.error||'';
   }catch(e){azPremium.checked=true;azPremium.configured=false;azPremium.error=String(e?.message||e)}
   return azPremium.configured;
@@ -261,6 +262,8 @@ function azStartPremiumMedia(l,mode,script,result){
   azAudioState.lessonId=Number(l.id);azAudioState.lesson=l;azAudioState.mode=mode;azAudioState.script=script;azAudioState.engine='premium';
   azAudioState.playing=true;azAudioState.paused=false;azAudioState.currentTime=0;
   azAudioState.premiumProvider=data?.provider||'';azAudioState.premiumModel=data?.model_id||'';
+  azAudioState.premiumProviders=Array.isArray(data?.providers_used)?data.providers_used:[];
+  azAudioState.fallbackCount=Number(data?.fallback_count)||0;
   azAudioState.segments=segments;azAudioState.segmentIndex=0;azAudioState.prefetch=null;
   if(segments.length){
     azAudioState.duration=Number(data?.duration_estimate)||azPremiumTotalDuration()||AZ_AUDIO_MODES[mode].minutes*60;
@@ -344,7 +347,7 @@ function stopDailyAudio(){
   if(azAudioState.media){try{azAudioState.media.onpause=null;azAudioState.media.pause();azAudioState.media.currentTime=0}catch{}}
   if('speechSynthesis'in window)try{speechSynthesis.cancel()}catch{}
   azAudioState.playing=false;azAudioState.paused=false;azAudioState.currentTime=0;azAudioState.index=0;
-  azAudioState.segments=[];azAudioState.segmentIndex=0;azAudioState.prefetch=null;
+  azAudioState.segments=[];azAudioState.segmentIndex=0;azAudioState.prefetch=null;azAudioState.premiumProviders=[];azAudioState.fallbackCount=0;
   azClearMediaSession();azAudioRefreshUI();renderVoiceLibraryCurrent();
 }
 function azAudioSeekSeconds(delta){
@@ -396,7 +399,7 @@ function azAudioRefreshUI(refreshLibrary=true){
     if(bar)bar.style.width=(same?p:0)+'%';if(pct)pct.textContent=(same?p:0)+'%';
     box.querySelectorAll('[data-audio-mode]').forEach(b=>b.classList.toggle('active',(same?azAudioState.mode:'daily')===b.dataset.audioMode));
     box.querySelectorAll('[data-audio-speed]').forEach(b=>b.classList.toggle('active',Number(b.dataset.audioSpeed)===Number(azAudioSettings.speed)));
-    const src=box.querySelector('[data-audio-source-label]');if(src)src.textContent=azAudioState.engine==='premium'&&same?(azAudioState.premiumProvider==='elevenlabs'?'Documentaire Premium · Eleven v4':'Documentaire Premium'):(azPremium.configured?'Premium disponible':'Voix appareil');
+    const src=box.querySelector('[data-audio-source-label]');if(src){if(azAudioState.engine==='premium'&&same){src.textContent=azAudioState.premiumProvider==='mixed'?'Documentaire Premium · ElevenLabs + OpenAI'+(azAudioState.fallbackCount?' · '+azAudioState.fallbackCount+' secours':''):azAudioState.premiumProvider==='elevenlabs'?'Documentaire Premium · Eleven v4':azAudioState.premiumProvider==='openai'?'Documentaire Premium · OpenAI':'Documentaire Premium'}else src.textContent=azPremium.configured?'Premium disponible':'Voix appareil'}
   });
   mini.classList.toggle('hidden',!azAudioState.playing);
   if(azAudioState.playing&&azAudioState.lesson){
@@ -436,7 +439,9 @@ async function renderVoiceSettings(){
   await azPremiumStatus(true);if(azPremium.configured)await azLoadPremiumVoices(true);
   const premiumVoice=azPremiumVoice(),localVoice=azLocalVoice(),premiumLabel=azPremium.configured?'Disponible':'Bloqué';
   const providerText='ElevenLabs : '+(azPremium.providers?.elevenlabs?'connecté':'non connecté')+' · OpenAI : '+(azPremium.providers?.openai?'connecté':'non connecté');
-  box.innerHTML=`<div class="azVoiceStatus ${azPremium.configured?'ok':'warn'}"><b>Audio premium documentaire</b><span>${premiumLabel}</span><small>${azPremium.configured?'Moteur premium actif · '+providerText:providerText+' · Aucun moteur premium ne peut générer la nouvelle voix. La voix système n’est utilisée qu’en mode Auto.'}</small><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button id="azPremiumRetry" class="btn" type="button">Retester Premium</button><span class="small">Configuration serveur : Supabase → Edge Functions → Secrets → ELEVENLABS_API_KEY ou OPENAI_API_KEY.</span></div></div>
+  const chain=Array.isArray(azPremium.documentary?.fallback_chain)?azPremium.documentary.fallback_chain:[];
+  const chainText=chain.length?' · Chaîne : '+chain.map(x=>x==='elevenlabs'?'ElevenLabs':'OpenAI').join(' → ')+(azPremium.documentary?.segment_resume?' · reprise automatique par segment':''):'';
+  box.innerHTML=`<div class="azVoiceStatus ${azPremium.configured?'ok':'warn'}"><b>Audio premium documentaire</b><span>${premiumLabel}</span><small>${azPremium.configured?'Moteur premium actif · '+providerText+chainText:providerText+' · Aucun moteur premium ne peut générer la nouvelle voix. La voix système n’est utilisée qu’en mode Auto.'}</small><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button id="azPremiumRetry" class="btn" type="button">Retester Premium</button><span class="small">Configuration serveur : Supabase → Edge Functions → Secrets → ELEVENLABS_API_KEY ou OPENAI_API_KEY.</span></div></div>
   <div class="azVoiceSettingsGrid">
     <label><span>Style</span><select id="azVoiceProfile" class="select">${Object.entries(AZ_AUDIO_PROFILES).map(([k,p])=>`<option value="${k}" ${azAudioSettings.profile===k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></label>
     <label><span>Source</span><select id="azVoiceSource" class="select"><option value="auto" ${azAudioSettings.source==='auto'?'selected':''}>Auto · Premium prioritaire</option><option value="premium" ${azAudioSettings.source==='premium'?'selected':''}>Premium neuronal</option><option value="local" ${azAudioSettings.source==='local'?'selected':''}>Voix système / appareil</option></select></label>
