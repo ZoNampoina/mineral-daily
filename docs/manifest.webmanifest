@@ -2,7 +2,7 @@
   "name": "ARIZONA",
   "short_name": "ARIZONA",
   "description": "Fiches professionnelles de minéraux pour l’ingénierie minière",
-  "start_url": "./?app=21.16",
+  "start_url": "./?app=21.17",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090d12",

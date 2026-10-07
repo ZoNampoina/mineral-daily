@@ -1,4 +1,4 @@
-// ARIZONA V21.16 · ElevenLabs → OpenAI resilient premium audio
+// ARIZONA V21.17 · OpenAI premium voice primary
 const AZ_AUDIO_MODES={
   short:{label:'Résumé 2 min',minutes:2,maxWords:300},
   daily:{label:'Quotidien 5 min',minutes:5,maxWords:720},
@@ -399,7 +399,7 @@ function azAudioRefreshUI(refreshLibrary=true){
     if(bar)bar.style.width=(same?p:0)+'%';if(pct)pct.textContent=(same?p:0)+'%';
     box.querySelectorAll('[data-audio-mode]').forEach(b=>b.classList.toggle('active',(same?azAudioState.mode:'daily')===b.dataset.audioMode));
     box.querySelectorAll('[data-audio-speed]').forEach(b=>b.classList.toggle('active',Number(b.dataset.audioSpeed)===Number(azAudioSettings.speed)));
-    const src=box.querySelector('[data-audio-source-label]');if(src){if(azAudioState.engine==='premium'&&same){src.textContent=azAudioState.premiumProvider==='mixed'?'Documentaire Premium · ElevenLabs + OpenAI'+(azAudioState.fallbackCount?' · '+azAudioState.fallbackCount+' secours':''):azAudioState.premiumProvider==='elevenlabs'?'Documentaire Premium · Eleven v4':azAudioState.premiumProvider==='openai'?'Documentaire Premium · OpenAI':'Documentaire Premium'}else src.textContent=azPremium.configured?'Premium disponible':'Voix appareil'}
+    const src=box.querySelector('[data-audio-source-label]');if(src){if(azAudioState.engine==='premium'&&same){src.textContent=azAudioState.premiumProvider==='mixed'?'Documentaire Premium · OpenAI + ElevenLabs'+(azAudioState.fallbackCount?' · '+azAudioState.fallbackCount+' secours':''):azAudioState.premiumProvider==='elevenlabs'?'Documentaire Premium · Eleven v4':azAudioState.premiumProvider==='openai'?'Documentaire Premium · OpenAI':'Documentaire Premium'}else src.textContent=azPremium.configured?'Premium disponible':'Voix appareil'}
   });
   mini.classList.toggle('hidden',!azAudioState.playing);
   if(azAudioState.playing&&azAudioState.lesson){

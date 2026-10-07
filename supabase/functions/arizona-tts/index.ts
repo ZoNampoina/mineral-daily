@@ -37,8 +37,8 @@ function chooseProvider(requested: string) {
   const s = providerStatus();
   if (requested === "openai") return s.openai ? "openai" : null;
   if (requested === "elevenlabs") return s.elevenlabs ? "elevenlabs" : null;
-  if (s.elevenlabs) return "elevenlabs";
   if (s.openai) return "openai";
+  if (s.elevenlabs) return "elevenlabs";
   return null;
 }
 
@@ -389,14 +389,15 @@ Deno.serve(async (req: Request) => {
     return json({
       configured: status.openai || status.elevenlabs,
       providers: status,
-      preferred: status.elevenlabs ? "elevenlabs" : status.openai ? "openai" : null,
+      preferred: status.openai ? "openai" : status.elevenlabs ? "elevenlabs" : null,
       documentary_premium: {
         version: PROMPT_VERSION,
         narrative: status.openai ? "gpt-6.1-sol" : "fallback",
-        tts: status.elevenlabs ? "eleven_v4" : status.openai ? "gpt-4o-mini-tts" : null,
+        tts: status.openai ? "gpt-4o-mini-tts" : status.elevenlabs ? "eleven_v4" : null,
+        voice: status.openai ? (Deno.env.get("OPENAI_TTS_VOICE") || "cedar") : null,
         fallback_chain: [
-          ...(status.elevenlabs ? ["elevenlabs"] : []),
           ...(status.openai ? ["openai"] : []),
+          ...(status.elevenlabs ? ["elevenlabs"] : []),
         ],
         segment_resume: true,
       },
@@ -444,11 +445,11 @@ Deno.serve(async (req: Request) => {
     : String(body?.openai_voice_id || Deno.env.get("OPENAI_TTS_VOICE") || "cedar");
   const elevenVoice = String(body?.elevenlabs_voice_id || rawVoice || Deno.env.get("ELEVENLABS_VOICE_ID") || "JBFqnCBsd6RMkjVDRZzb");
 
-  const providers = requestedProvider === "openai"
-    ? (status.openai ? ["openai"] : status.elevenlabs ? ["elevenlabs"] : [])
+  const providers = requestedProvider === "elevenlabs"
+    ? (status.elevenlabs ? ["elevenlabs"] : status.openai ? ["openai"] : [])
     : [
-        ...(status.elevenlabs ? ["elevenlabs"] : []),
         ...(status.openai ? ["openai"] : []),
+        ...(status.elevenlabs ? ["elevenlabs"] : []),
       ];
   const voices: Record<string,string> = {
     elevenlabs: elevenVoice,
